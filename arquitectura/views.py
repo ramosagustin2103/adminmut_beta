@@ -33,7 +33,6 @@ class Index(generic.TemplateView):
 		bonificaciones = Accesorio.objects.filter(consorcio=consorcio(self.request), clase='bonificacion', finalizacion__isnull=True).count()
 		cajas = Caja.objects.filter(consorcio=consorcio(self.request)).count()
 		socios = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=True, baja__isnull=True).count()
-		dominios = Dominio.objects.filter(consorcio=consorcio(self.request)).count()
 		grupos = Grupo.objects.filter(consorcio=consorcio(self.request), baja__isnull=True).count()
 		acreedores = Acreedor.objects.filter(consorcio=consorcio(self.request)).count()
 		clientes = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=False, baja__isnull=True).count()
@@ -42,18 +41,14 @@ class Index(generic.TemplateView):
 
 
 PIVOT = {
-	'Ingreso': ['Recursos', ingresoForm],
-	'Gasto': ['Erogaciones', gastoForm],
-	'Caja': ['Tesoro', cajaForm],
+	'Ingreso': ['Ingresos', ingresoForm],
+	'Gasto': ['Gastos', gastoForm],
+	'Caja': ['Cajas', cajaForm],
 	'Punto': ['Puntos de gestion', ],
-	'Socio': ['Socios', socioForm],
-	'Dominio': ['Dominios', dominioForm],
-	'Grupo': ['Grupos de dominios', grupoForm],
-	'Acreedor': ['Acreedores', acreedorForm],
-	'Cliente': ['Clientes', clienteForm],
-	'interes': ['Intereses', interesForm],
-	'descuento': ['Descuentos', descuentoForm],
-	'bonificacion': ['Bonificaciones', bonificacionForm],
+	'Socio': ['Padron de Asociados', socioForm],
+	'Grupo': ['Categoria de Asociados', grupoForm],
+	'Acreedor': ['Proveedores', acreedorForm],
+	'Cliente': ['Servicios Mutuales', clienteForm],
 
 }
 
@@ -67,8 +62,6 @@ class Listado(generic.ListView):
 	def get_queryset(self, **kwargs):
 		if self.kwargs['modelo'] == "Punto":
 			objetos = PointOfSales.objects.filter(owner=consorcio(self.request).contribuyente).order_by('number')
-		elif self.kwargs['modelo'] == "Cliente":
-			objetos = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=False)
 		else:
 			objetos = eval(self.kwargs['modelo']).objects.filter(consorcio=consorcio(self.request))
 			if self.kwargs['modelo'] == "Socio":

@@ -111,17 +111,20 @@
       <tr>
         <th width="20"></th>
         <th width="20"></th>
-        <th>N°</th>
         <th>Nombre</th>
-        <th>Dominios</th>
+        <th>Apellido</th>
+        <th>Numero</th>
+        <th>Categoria</th>  
         <th>Documento</th>
+        <th>Domicilio</th>
+        <th>Localidad</th>
+        <th>Provincia</th>
+        <th>Fecha de Nacimiento</th>
         <th>Telefono</th>
         <th>Email</th>
-        {% if consorcio.id == 19 %}
-          <th>Email Admin</th>
-        {% endif %}  
-        <th>Domicilio</th>
-        <th>Codigo</th>
+        <th>Profesion</th>
+        <th>Fecha de Ingreso</th>
+        <th>Notificaciones</th>  
       </tr>
     </thead>
     <tbody>
@@ -145,34 +148,30 @@
           </a>
           {% endif %}
         </td>
-        <td>{{objeto.id}}</td>
-        <td>{{objeto}}</td>
+        <td>{{objeto.nombre}}</td>
+        <td>{{objeto.apellido}}</td>
         <td>
           {% for dominio in objeto.socio.all %}
             #{{dominio}}{% if not forloop.last %};{% endif %}
           {%endfor%}
         </td>
+        <td>Activo</td>        
         <td>
           {% if objeto.tipo_documento and objeto.numero_documento %}
             {{objeto.tipo_documento}}: {{objeto.numero_documento}}
           {% endif %}
         </td>
-        <td>{% if objeto.telefono %}{{objeto.telefono}}{% endif %}</td>
-        <td>
-          {% for usuario in objeto.usuarios.all %}
-            {{usuario.email|default:""}}
-            {%if not forloop.last%}; {% endif %}
-          {% endfor %}
-        </td>
-        {% if objeto.consorcio.id == 19 %}
-          <td>{{objeto.mail|default:""}}</td>
-        {% endif %}
         <td>{% if objeto.domicilio %}{{objeto.domicilio}}{% endif %}</td>
+        <td>{{objeto.localidad|default:""}}</td>
+        <td>{{objeto.provincia|default:""}}</td>
         <td>
-          <a href="{% url 'codigo-socio' pk=objeto.pk %}" target="_blank" class="btn btn-icon btn-bordered btn-purple btn-xs">
-            <i class="fa fa-print"></i>
-          </a>
-        </td>
+          {{objeto.fecha_nacimiento|default:""}}
+        </td> 
+        <td>{% if objeto.telefono %}{{objeto.telefono}}{% endif %}</td>
+          <td>{{objeto.mail|default:""}}</td>
+        <td>{{objeto.profesion|default:""}}</td>
+        <td>21/03/1993</td>
+        <td>SI</td>
       </tr>
     {% endfor %}
     </tbody>

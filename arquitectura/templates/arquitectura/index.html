@@ -34,25 +34,8 @@
                   <img src="{% static 'assets/images/icons/businesswoman.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Socios</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">PADRON DE ASOCIADOS</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ socios }}</span></h2>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <div class="col-md-6">
-            <a href="{% url 'parametro' modelo='Dominio' %}">
-              <div class="card-box widget-box-three ribbon-box">
-                {% if dominios == 0 %}
-                  <div class="ribbon-two ribbon-two-danger"><span>Completar</span></div>
-                {% endif %}
-                <div class="bg-icon pull-left">
-                  <img src="{% static 'assets/images/icons/home.svg' %}">
-                </div>
-                <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Dominios</p>
-                  <h2 class="m-b-10"><span data-plugin="counterup">{{ dominios }}</span></h2>
                 </div>
               </div>
             </a>
@@ -65,7 +48,7 @@
                   <img src="{% static 'assets/images/icons/conference_call.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Grupos</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">CATEGORIAS DE ASOCIADOS</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ grupos }}</span></h2>
                 </div>
               </div>
@@ -82,7 +65,7 @@
                   <img src="{% static 'assets/images/icons/business_contact.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Acreedores</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">PROVEEDORES</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ acreedores }}</span></h2>
                 </div>
               </div>
@@ -96,7 +79,7 @@
                   <img src="{% static 'assets/images/icons/reading.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Clientes</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">SERVICIOS MUTUALES</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ clientes }}</span></h2>
                 </div>
               </div>
@@ -127,7 +110,7 @@
                   <img src="{% static 'assets/images/icons/sales_performance.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Recursos</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">INGRESOS</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ ingresos }}</span></h2>
                 </div>
               </div>
@@ -144,7 +127,7 @@
                   <img src="{% static 'assets/images/icons/donate.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Erogaciones</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">GASTOS</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ gastos }}</span></h2>
                 </div>
               </div>
@@ -161,7 +144,7 @@
                   <img src="{% static 'assets/images/icons/fine_print.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Puntos</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">PUNTOS DE GESTION</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ puntos }}</span></h2>
                 </div>
               </div>
@@ -178,51 +161,8 @@
                   <img src="{% static 'assets/images/icons/safe.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Tesoro</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">CAJAS</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ cajas }}</span></h2>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <div class="col-md-6">
-            <a href="{% url 'listado_accesorio' clase='interes' %}">
-              <div class="card-box widget-box-three ribbon-box">
-                <div class="bg-icon pull-left">
-                  <img src="{% static 'assets/images/icons/external.svg' %}">
-                </div>
-                <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Intereses</p>
-                  <h2 class="m-b-10"><span data-plugin="counterup">{{ intereses }}</span></h2>
-                </div>
-              </div>
-            </a>
-          </div>
-
-
-          <div class="col-md-6">
-            <a href="{% url 'listado_accesorio' clase='descuento' %}">
-              <div class="card-box widget-box-three ribbon-box">
-                <div class="bg-icon pull-left">
-                  <img src="{% static 'assets/images/icons/internal.svg' %}">
-                </div>
-                <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Descuentos</p>
-                  <h2 class="m-b-10"><span data-plugin="counterup">{{ descuentos }}</span></h2>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          <div class="col-md-6">
-            <a href="{% url 'listado_accesorio' clase='bonificacion' %}">
-              <div class="card-box widget-box-three ribbon-box">
-                <div class="bg-icon pull-left">
-                  <img src="{% static 'assets/images/icons/low_priority.svg' %}">
-                </div>
-                <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">Bonificaciones</p>
-                  <h2 class="m-b-10"><span data-plugin="counterup">{{ bonificaciones }}</span></h2>
                 </div>
               </div>
             </a>
