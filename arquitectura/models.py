@@ -1,11 +1,13 @@
 from __future__ import unicode_literals
 from datetime import datetime, date, timedelta
+from email.policy import default
 from django.contrib.auth.models import User, Group
 from django.db import models
 from django.db.models import Sum
 from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 from django.core.validators import RegexValidator
+from django.forms import BooleanField
 from django_afip.models import PointOfSales, DocumentType, ConceptType
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.template.loader import render_to_string
@@ -13,6 +15,34 @@ from weasyprint import HTML
 
 from consorcios.models import *
 from contabilidad.models import *
+
+
+
+
+
+# adminmut
+
+
+class Tipo_asociado(models.Model):
+
+	""" Tipo de asociado """
+
+	consorcio = models.ForeignKey(Consorcio, on_delete=models.CASCADE, related_name='tipo_asociado' )
+	nombre = models.CharField(max_length=80)
+	baja = models.DateField(blank=True, null=True)
+	descripcion = models.TextField(blank=False, null=True)
+
+	def __str__(self):
+		return self.nombre
+
+
+
+
+
+
+
+
+
 
 
 class Relacion(models.Model):
@@ -216,7 +246,7 @@ class Gasto(models.Model):
 
 class Socio(models.Model):
 
-	""" Socios y NO SOCIOS. Quedo con el nombre de socio por intempestividad """
+	""" Socios y NO SOCIOS y servicios mutuales. Quedo con el nombre de socio por intempestividad """
 
 	# Usuarios diferentes por mas que tenga dos clubes (No se compensan unos con otros)
 	consorcio = models.ForeignKey(Consorcio, on_delete=models.CASCADE)
@@ -224,7 +254,7 @@ class Socio(models.Model):
 	es_socio = models.BooleanField(default=True)
 	usuarios = models.ManyToManyField(User, blank=True)
 	# Nombre del socio
-	nombre = models.CharField(max_length=80)
+	nombre = models.CharField(max_length=80,blank=True, null=True)
 	apellido = models.CharField(max_length=80)
 	fecha_nacimiento = models.DateField(blank=True, null=True)
 	es_extranjero = models.BooleanField(default=False)
@@ -240,6 +270,15 @@ class Socio(models.Model):
 	baja = models.DateField(blank=True, null=True)
 	codigo = models.CharField(max_length=5, blank=True, null=True)
 	mail = models.EmailField(blank=True, null=True)
+
+
+
+	tipo_asociado = models.ForeignKey(Tipo_asociado, on_delete=models.CASCADE, related_name='socio', blank=True, null=True)
+	fecha_alta = models.DateField(blank=True, null=True)
+	notificaciones = models.BooleanField(default=False)
+	numero_asociado = models.PositiveIntegerField(default=1)
+	descripcion = models.TextField(blank=True, null=True)
+	nombre_servicio_mutual = models.CharField(max_length=80, blank=True, null=True)
 
 	def __str__(self):
 		nombre = '{}, {}'.format(self.apellido, self.nombre)
@@ -402,6 +441,9 @@ class Socio(models.Model):
 		ordering = ['apellido']
 
 
+
+
+
 class Dominio(models.Model):
 
 	""" Lotes """
@@ -467,7 +509,6 @@ class Grupo(models.Model):
 		return self.nombre
 
 
-
 class Acreedor(models.Model):
 
 	""" Acreedores de la entidad """
@@ -486,3 +527,4 @@ class Acreedor(models.Model):
 
 	def __str__(self):
 		return self.nombre
+

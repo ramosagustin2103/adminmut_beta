@@ -14,6 +14,8 @@ from consorcios.models import *
 from .models import *
 from .forms import *
 from creditos.models import Factura
+from django.db.models import Q
+
 
 @method_decorator(group_required('administrativo', 'contable'), name='dispatch')
 class Index(generic.TemplateView):
@@ -32,23 +34,23 @@ class Index(generic.TemplateView):
 		descuentos = Accesorio.objects.filter(consorcio=consorcio(self.request), clase='descuento', finalizacion__isnull=True).count()
 		bonificaciones = Accesorio.objects.filter(consorcio=consorcio(self.request), clase='bonificacion', finalizacion__isnull=True).count()
 		cajas = Caja.objects.filter(consorcio=consorcio(self.request)).count()
-		socios = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=True, baja__isnull=True).count()
-		grupos = Grupo.objects.filter(consorcio=consorcio(self.request), baja__isnull=True).count()
+		socios = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=True).count()
+		tipo_asociado = Tipo_asociado.objects.filter(consorcio=consorcio(self.request), baja__isnull=True).count()
 		acreedores = Acreedor.objects.filter(consorcio=consorcio(self.request)).count()
-		clientes = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=False, baja__isnull=True).count()
+		servicios_mutuales = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=False).count()
 		context.update(locals())
 		return context
 
 
 PIVOT = {
-	'Ingreso': ['Ingresos', ingresoForm],
+	'Ingreso': ['Recursos', ingresoForm],
 	'Gasto': ['Gastos', gastoForm],
 	'Caja': ['Cajas', cajaForm],
 	'Punto': ['Puntos de gestion', ],
 	'Socio': ['Padron de Asociados', socioForm],
-	'Grupo': ['Categoria de Asociados', grupoForm],
+	'Tipo_asociado': ['Categorias de Asociados', grupoForm],
 	'Acreedor': ['Proveedores', acreedorForm],
-	'Cliente': ['Servicios Mutuales', clienteForm],
+	'Servicio_mutual': ['Servicios Mutuales', servicioForm],
 
 }
 
@@ -62,11 +64,12 @@ class Listado(generic.ListView):
 	def get_queryset(self, **kwargs):
 		if self.kwargs['modelo'] == "Punto":
 			objetos = PointOfSales.objects.filter(owner=consorcio(self.request).contribuyente).order_by('number')
+		elif self.kwargs['modelo'] == "Servicio_mutual":
+   			objetos = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=True, nombre_servicio_mutual__isnull=False)
 		else:
-			objetos = eval(self.kwargs['modelo']).objects.filter(consorcio=consorcio(self.request))
+			objetos = eval(self.kwargs['modelo']).objects.filter(consorcio=consorcio(self.request), nombre__isnull=False)
 			if self.kwargs['modelo'] == "Socio":
-				objetos = objetos.filter(es_socio=True)
-
+				objetos = objetos.filter(Q(baja__isnull=True) | Q(nombre_servicio_mutual__isnull=True))
 		return objetos
 
 	def get_context_data(self, **kwargs):
@@ -138,8 +141,8 @@ class HeaderExeptMixin:
 
 	def dispatch(self, request, *args, **kwargs):
 		try:
-			if kwargs['modelo'] == "Cliente":
-				objeto = Socio.objects.get(consorcio=consorcio(self.request), pk=kwargs['pk'], es_socio=False)
+			if kwargs['modelo'] == "Servicio_mutual":
+				objeto = Socio.objects.get(consorcio=consorcio(self.request), pk=kwargs['pk'])
 			else:
 				objeto = eval(kwargs['modelo']).objects.get(consorcio=consorcio(self.request), pk=kwargs['pk'])
 		except:
@@ -153,9 +156,10 @@ class Instancia(HeaderExeptMixin, Crear, generic.UpdateView):
 
 	""" Para modificar una instancia de cualquier modelo excepto Punto """
 
+
 	def get_object(self, queryset=None):
-		if self.kwargs['modelo'] == "Cliente":
-			objeto = Socio.objects.get(pk=self.kwargs['pk'], es_socio=False)
+		if self.kwargs['modelo'] == "Servicio_mutual":
+			objeto = Socio.objects.get(pk=self.kwargs['pk'])
 		else:
 			objeto = eval(self.kwargs['modelo']).objects.get(pk=self.kwargs['pk'])
 		return objeto
@@ -238,43 +242,6 @@ class CrearAccesorio(generic.CreateView):
 		return super().form_valid(form)
 
 
-@method_decorator(group_required('administrativo', 'contable'), name='dispatch')
-class FinalizarAccesorio(generic.UpdateView):
-
-	""" Finalizar un accesorio, descuento o interes """
-
-	template_name = 'arquitectura/instancia.html'
-	model = Accesorio
-	form_class = hiddenForm
-
-
-	def get_context_data(self, **kwargs):
-		context = super().get_context_data(**kwargs)
-		pregunta = self.get_object().clase
-		respuesta = "Esta accion inutilizara la aplicacion de este {} en los futuras facturas que realice. Esta seguro? ".format(pregunta)
-		context.update(locals())
-		return context
-
-	def get_success_url(self, **kwargs):
-		return reverse_lazy('listado_accesorio', args=(self.get_object().clase,))
-
-
-	@transaction.atomic
-	def form_valid(self, form):
-		objeto = self.get_object()
-		objeto.finalizacion = date.today()
-		objeto.save()
-		return redirect('listado_accesorio', clase=objeto.clase)
-
-	def dispatch(self, request, *args, **kwargs):
-		try:
-			accesorio = Accesorio.objects.get(pk=kwargs['pk'], consorcio=consorcio(request))
-		except:
-			messages.error(request, 'No se pudo encontrar.')
-			return redirect('parametros')
-		return super().dispatch(request, *args, **kwargs)
-
-
 
 @method_decorator(group_required('administrativo', 'contable'), name='dispatch')
 class Finalizar(HeaderExeptMixin, generic.UpdateView):
@@ -286,8 +253,8 @@ class Finalizar(HeaderExeptMixin, generic.UpdateView):
 	form_class = hiddenForm
 
 	def get_object(self, queryset=None):
-		if self.kwargs['modelo'] == "Cliente":
-			objeto = Socio.objects.get(pk=self.kwargs['pk'], es_socio=False)
+		if self.kwargs['modelo'] == "Servicio_mutual":
+			objeto = Socio.objects.get(pk=self.kwargs['pk'])
 		else:
 			objeto = eval(self.kwargs['modelo']).objects.get(pk=self.kwargs['pk'])
 		return objeto
@@ -329,8 +296,8 @@ class Reactivar(HeaderExeptMixin, generic.UpdateView):
 	form_class = hiddenForm
 
 	def get_object(self, queryset=None):
-		if self.kwargs['modelo'] == "Cliente":
-			objeto = Socio.objects.get(pk=self.kwargs['pk'], es_socio=False)
+		if self.kwargs['modelo'] == "Servicio_mutual":
+			objeto = Socio.objects.get(pk=self.kwargs['pk'])
 		else:
 			objeto = eval(self.kwargs['modelo']).objects.get(pk=self.kwargs['pk'])
 		return objeto

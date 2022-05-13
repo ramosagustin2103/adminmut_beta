@@ -8,6 +8,8 @@ from django.db.models import Q
 from django_afip.models import PointOfSales
 from admincu.forms import FormControl
 
+from django.db.models import Max
+
 
 class ingresoForm(FormControl, forms.ModelForm):
 	class Meta:
@@ -126,31 +128,68 @@ class socioForm(FormControl, forms.ModelForm):
 	class Meta:
 		model = Socio
 		fields = [
-			'nombre', 'apellido',
-			'fecha_nacimiento', 'es_extranjero', 'tipo_documento',
-			'numero_documento',	'telefono',
-			'domicilio', 'localidad',
-			'provincia', 'profesion', 
-			'mail'
+			'nombre', 'apellido','numero_asociado','tipo_asociado',
+			'fecha_alta',  'tipo_documento',
+			'numero_documento','fecha_nacimiento',	
+			'es_extranjero', 'domicilio', 'localidad',
+			'provincia', 'telefono','profesion', 
+			'mail',   'notificaciones'
 			]
 		labels = {
+			'numero_asociado' : "Numero de asociado",
 			'fecha_nacimiento': "Fecha de nacimiento",
 			'es_extranjero': 'Es extranjero?',
 			'tipo_documento': 'Tipo de Documento',
 			'numero_documento': 'Numero de Documento',
+			'tipo_asociado':'Tipo de asociado',
+			'fecha_alta': 'Fecha de alta',
+			'notificaciones': 'Recibe notificaciones?'
 		}
 		widgets = {
+			'notificaciones': NullBooleanSelect(),
 			'es_extranjero': NullBooleanSelect(),
-			'numero_documento': TextInput(attrs={'type': 'number', 'min': '0', 'step':'1', 'required':True})
+			'numero_documento': TextInput(attrs={'type': 'number', 'min': '0', 'step':'1', 'required':True}),
+
 		}
+
 
 	def __init__(self, consorcio=None, *args, **kwargs):
 		self.consorcio = consorcio
 		super().__init__(*args, **kwargs)
+		self.fields['numero_asociado'].initial = Socio.objects.aggregate(Max('numero_asociado'))['numero_asociado__max']+1
+		self.fields['tipo_asociado'].queryset = Tipo_asociado.objects.filter(consorcio=consorcio, baja__isnull=True)
 		self.fields['tipo_documento'].required = True
-		if not consorcio.id==19:
-			self.fields.pop('mail')			
-    			
+		self.fields['numero_documento'].required = True
+		self.fields['fecha_alta'].required = True
+		self.fields['tipo_asociado'].required = True
+		self.fields['numero_asociado'].required = True
+		self.fields['nombre'].required = True
+
+
+	def clean_numero_asociado(self):
+		numero_asociado = self.cleaned_data['numero_asociado']
+		socios_del_club = Socio.objects.filter(consorcio=self.consorcio)
+		if self.instance:
+			socios_del_club = socios_del_club.exclude(pk=self.instance.pk)
+		n_asocs = []
+		for s in socios_del_club:
+			n_asocs.append(s.numero_asociado)
+		if numero_asociado in n_asocs:
+			raise forms.ValidationError("ya existe un asociado con el numero indicado")
+		return numero_asociado
+
+	def clean_numero_documento(self):
+		numero_documento = self.cleaned_data['numero_documento']
+		socios_del_club = Socio.objects.filter(consorcio=self.consorcio)
+		if self.instance:
+   			socios_del_club = socios_del_club.exclude(pk=self.instance.pk)
+		documentos = []
+		for s in socios_del_club:
+			documentos.append(s.numero_documento)
+		if numero_documento in documentos:
+			raise forms.ValidationError("ya existe un asociado con el numero de documento indicado")
+		return numero_documento
+
 			
 
 		
@@ -285,38 +324,33 @@ class bonificacionForm(FormControl, forms.ModelForm):
 
 class grupoForm(FormControl, forms.ModelForm):
 	class Meta:
-		model = Grupo
-		fields = ['nombre', 'dominios']
+		model = Tipo_asociado
+		fields = ['nombre', 'descripcion']
 
 	def __init__(self, consorcio=None, *args, **kwargs):
 		self.consorcio = consorcio
 		super().__init__(*args, **kwargs)
-		self.fields['dominios'].queryset = Dominio.objects.filter(consorcio=consorcio)
+		self.fields['nombre'].required = True
+		#self.fields['dominios'].queryset = Dominio.objects.filter(consorcio=consorcio)
 
 
-class clienteForm(FormControl, forms.ModelForm):
+
+
+class servicioForm(FormControl, forms.ModelForm):
 	class Meta:
 		model = Socio
-		fields = [
-			'nombre', 'apellido',
-			'tipo_documento', 'numero_documento',
-			'telefono', 'domicilio',
-			'localidad', 'provincia'
-			]
-
+		fields = ['nombre_servicio_mutual','nombre', 'descripcion' ]
 		labels = {
-			'tipo': 'Tipo de Gasto',
-			'tipo_documento': 'Tipo de documento',
-			'numero_documento': 'Numero de documento'
+			'nombre':"Nombre del grupo de asociados que reciben el servicio",
+			'descripcion': "Descripcion del servicio",
+			'nombre_servicio_mutual': "Nombre del servicio mutual",
 		}
-		widgets = {
-			'numero_documento': TextInput(attrs={'type': 'number', 'min': '0', 'step':'1', 'required':True})
-		}
-
 
 	def __init__(self, consorcio=None, *args, **kwargs):
+		self.consorcio = consorcio
 		super().__init__(*args, **kwargs)
-		self.fields['tipo_documento'].required = True
+
+		self.fields['nombre_servicio_mutual'].required = True
 
 
 class hiddenForm(forms.ModelForm):
@@ -328,3 +362,5 @@ class hiddenForm(forms.ModelForm):
 		widgets = {
 			'finalizacion': HiddenInput(),
 		}
+
+

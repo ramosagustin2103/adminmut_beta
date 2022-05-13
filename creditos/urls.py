@@ -5,7 +5,7 @@ from .views_mp import *
 
 urlpatterns = [
 	# Indexs
-	path('', Index.as_view(), name='facturacion'), # Index para Administrativo y Contable
+	path('', Index.as_view(), name='recursos'), # Index para Administrativo y Contable
 	path('socio/', IndexSocio.as_view(), name='facturacion-socio'), # Index para Socio
 	path('conceptos/', IndexConceptos.as_view(), name='conceptos'), # Index para Administrativo y Contable
 
@@ -16,7 +16,7 @@ urlpatterns = [
 	path('nuevo/grupos/', GrupoWizard.as_view(), name='nuevo-grupo'),
 	path('nuevo/conceptos/', ConceptoWizard.as_view(), name='nuevo-conceptos'),
 	path('nuevo/conceptos/importacion/', ConceptoImportacionWizard.as_view(), name='nuevo-conceptos-importacion'),
-
+	path('nuevo/recurso/', RecursoWizard.as_view(), name='nuevo-recurso'),
 	# Registros
 	path('registro/liquidaciones/', RegistroLiquidaciones.as_view(), name='registro de liquidaciones'),
 	path('registro/creditos/', RegistroCreditos.as_view(), name='registro de creditos'),

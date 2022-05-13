@@ -45,7 +45,6 @@ class InicialForm(FormControl, forms.Form):
 	ingreso = forms.ModelChoiceField(queryset=Ingreso.objects.none(), empty_label="-- Seleccionar Ingreso --", label="Ingresos")
 	grupos = forms.MultipleChoiceField(choices=((None,None),))
 
-
 	def __init__(self, *args, **kwargs):
 		consorcio = kwargs.pop('consorcio')
 
@@ -58,6 +57,14 @@ class InicialForm(FormControl, forms.Form):
 			ok_conceptos = kwargs.pop('ok_conceptos')
 		except:
 			ok_conceptos = False
+
+
+		try:
+			rename_factura = kwargs.pop('rename_factura')
+		except:
+			rename_factura = False
+
+
 		super().__init__(*args, **kwargs)
 
 		if ok_grupos:
@@ -75,6 +82,11 @@ class InicialForm(FormControl, forms.Form):
 			self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio)
 		else:
 			self.fields.pop('ingreso')
+
+		if rename_factura:
+			self.fields.pop('fecha_factura')
+
+
 
 
 	def clean_fecha_factura(self):
@@ -127,23 +139,19 @@ class IndividualesForm(FormControl, forms.Form):
 	def __init__(self, consorcio, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		choices = [(None, '-- Seleccione Destinatario --')]
-		choices.append((None, '------ Dominios ------'))
-		for dominio in Dominio.objects.filter(consorcio=consorcio, padre__isnull=True, socio__isnull=False):
-			dato = 'dominio-{}'.format(dominio.id)
-			choices.append((dato, "{}. {}".format(dominio.socio, dominio.nombre)))
-		socios_sin_dominio = Socio.objects.filter(consorcio=consorcio, es_socio=True, socio__isnull=True)
-		if socios_sin_dominio:
-			choices.append((None, '------ Socios sin dominio asignado ------'))
-			for socio in socios_sin_dominio:
+		socios_servicios = Socio.objects.filter(consorcio=consorcio, es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=False)
+		if socios_servicios:
+			choices.append((None, '------ Grupos de asociados globales por servicios mutuales------'))
+			for socio in socios_servicios:
 				dato = 'socio-{}'.format(socio.id)
-				choices.append((dato, socio.nombre_completo))
+				choices.append((dato, socio.nombre))
 
-		clientes = Socio.objects.filter(consorcio=consorcio, es_socio=False)
-		if clientes:
-			choices.append((None, '------ Clientes ------'))
-			for cliente in clientes:
-				dato = 'socio-{}'.format(cliente.id)
-				choices.append((dato, cliente.nombre_completo))
+		asociados = Socio.objects.filter(consorcio=consorcio, es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=True)
+		if asociados:
+			choices.append((None, '------ Padron de asociados ------'))
+			for s in asociados:
+				dato = 'socio-{}'.format(s.id)
+				choices.append((dato, s.nombre_completo))
 		self.fields['destinatario'].choices = choices
 		self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio)
 

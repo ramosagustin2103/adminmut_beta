@@ -129,19 +129,24 @@
     </thead>
     <tbody>
     {% for objeto in object_list %}
+      
       <tr>
         <td class="text-center">
           {% if not objeto.baja %}
-          <a href="{% url 'instancia' modelo=parametro pk=objeto.pk %}" id="envio" class="btn btn-icon btn-bordered btn-warning btn-xs">
-            <i class="fa fa-pencil"></i>
-          </a>
+            {% if not objeto.nombre_servicio_mutual %}
+            <a href="{% url 'instancia' modelo=parametro pk=objeto.pk %}" id="envio" class="btn btn-icon btn-bordered btn-warning btn-xs">
+              <i class="fa fa-pencil"></i>
+            </a>
+            {% endif %}
           {% endif %}
         </td>
         <td class="text-center">
           {% if not objeto.baja %}
+          {% if not objeto.nombre_servicio_mutual %}
           <a href="{% url 'finalizar-parametro' modelo=parametro pk=objeto.pk %}" id="envio" class="btn btn-icon btn-bordered btn-danger btn-xs">
           <i class="fa fa-user-times"></i>
           </a>
+          {% endif %}
           {% else %}
           <a href="{% url 'reactivar-parametro' modelo=parametro pk=objeto.pk %}" id="envio" class="btn btn-icon btn-bordered btn-success btn-xs">
             <i class="fa fa-user-plus"></i>
@@ -153,9 +158,11 @@
         <td>
           {% for dominio in objeto.socio.all %}
             #{{dominio}}{% if not forloop.last %};{% endif %}
-          {%endfor%}
+    
+    
+            {%endfor%}
         </td>
-        <td>Activo</td>        
+        <td>{{objeto.tipo_asociado|default:""}}</td>        
         <td>
           {% if objeto.tipo_documento and objeto.numero_documento %}
             {{objeto.tipo_documento}}: {{objeto.numero_documento}}
@@ -170,57 +177,12 @@
         <td>{% if objeto.telefono %}{{objeto.telefono}}{% endif %}</td>
           <td>{{objeto.mail|default:""}}</td>
         <td>{{objeto.profesion|default:""}}</td>
-        <td>21/03/1993</td>
-        <td>SI</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-
-
-  {% elif parametro == "Dominio" %}
-    <thead>
-      <tr>
-        <th width="20"></th>
-        <th>Identificacion</th>
-        <th>Propietario</th>
-        <th>Ocupante</th>
-        <th>Sup. Total</th>
-        <th>Sup. Cubierta</th>
-        <th>Unificado con</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for objeto in object_list %}
-      <tr>
-        <td class="text-center">
-          <a href="{% url 'instancia' modelo=parametro pk=objeto.pk %}" id="envio" class="btn btn-icon btn-bordered btn-warning btn-xs">
-            <i class="fa fa-pencil"></i>
-          </a>
-        </td>
-        <td>{{objeto.nombre}}</td>
-        <td>
-          {% if objeto.propietario %}
-            {{objeto.propietario}}
-          {% else %}
-            <i class="fa fa-warning"></i> No asignado
-          {% endif %}
-        </td>
-        <td>
-          {% if objeto.socio %}
-            {{objeto.socio}}
-          {% else %}
-            <i class="fa fa-warning"></i> No asignado
-          {% endif %}
-        </td>
-        <td>
-          {{ objeto.superficie_total|default:"0,000" }}
-        </td>
-        <td>
-          {{ objeto.superficie_cubierta|default:"0,000" }}
-        </td>
-        <td>
-          {{ objeto.padre|default:"" }}
-        </td>
+        <td>{{objeto.fecha_alta|default:""}}</td>
+        {% if objeto.notificaciones %}
+        <td>Si</td>
+        {% else %}
+        <td>No</td>
+        {% endif %}
       </tr>
     {% endfor %}
     </tbody>
@@ -256,15 +218,13 @@
     {% endfor %}
     </tbody>
 
-
-  {% elif parametro == "Cliente" %}
+  {% elif parametro == "Tipo_asociado" %}
     <thead>
       <tr>
         <th width="20"></th>
         <th width="20"></th>
-        <th>Numero</th>
         <th>Nombre</th>
-        <th>Documento</th>
+        <th>Descripcion</th>
       </tr>
     </thead>
     <tbody>
@@ -288,25 +248,20 @@
           </a>
           {% endif %}
         </td>
-        <td>{{forloop.counter}}</td>
-        <td>{{objeto}}</td>
-        <td>
-          {% if objeto.tipo_documento and objeto.numero_documento %}
-            {{objeto.tipo_documento}}: {{objeto.numero_documento}}
-          {% endif %}
-        </td>
+        <td>{{objeto.nombre}}</td>
+        <td>{{objeto.descripcion|default:" " }}</td>        
       </tr>
     {% endfor %}
     </tbody>
-
-
-  {% elif parametro == "Grupo" %}
+  
+    {% elif parametro == "Servicio_mutual" %}
     <thead>
       <tr>
         <th width="20"></th>
         <th width="20"></th>
-        <th>Numero</th>
         <th>Nombre</th>
+        <th>Grupo Asociados</th>
+        <th>Descripcion</th>
       </tr>
     </thead>
     <tbody>
@@ -330,12 +285,15 @@
           </a>
           {% endif %}
         </td>
-        <td>{{forloop.counter}}</td>
-        <td>{{objeto}}</td>
+        <td>{{objeto.nombre_servicio_mutual|default:" " }}</td>
+        <td>{{objeto.nombre|default:""}}</td>
+        <td>{{objeto.descripcion|default:" " }}</td>        
       </tr>
     {% endfor %}
     </tbody>
-  {% elif parametro == "interes" or parametro == "descuento" or parametro == "bonificacion" %}
+
+
+    {% elif parametro == "interes" or parametro == "descuento" or parametro == "bonificacion" %}
     <thead>
       <tr>
         <th width="20"></th>

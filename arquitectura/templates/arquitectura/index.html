@@ -42,14 +42,14 @@
           </div>
 
           <div class="col-md-6">
-            <a href="{% url 'parametro' modelo='Grupo' %}">
+            <a href="{% url 'parametro' modelo='Tipo_asociado' %}">
               <div class="card-box widget-box-three ribbon-box">
                 <div class="bg-icon pull-left">
                   <img src="{% static 'assets/images/icons/conference_call.svg' %}">
                 </div>
                 <div class="text-right">
                   <p class="m-t-5 text-uppercase font-14 font-600">CATEGORIAS DE ASOCIADOS</p>
-                  <h2 class="m-b-10"><span data-plugin="counterup">{{ grupos }}</span></h2>
+                  <h2 class="m-b-10"><span data-plugin="counterup">{{ tipo_asociado }}</span></h2>
                 </div>
               </div>
             </a>
@@ -73,14 +73,14 @@
           </div>
 
           <div class="col-md-6">
-            <a href="{% url 'parametro' modelo='Cliente' %}">
+            <a href="{% url 'parametro' modelo='Servicio_mutual' %}">
               <div class="card-box widget-box-three ribbon-box">
                 <div class="bg-icon pull-left">
                   <img src="{% static 'assets/images/icons/reading.svg' %}">
                 </div>
                 <div class="text-right">
                   <p class="m-t-5 text-uppercase font-14 font-600">SERVICIOS MUTUALES</p>
-                  <h2 class="m-b-10"><span data-plugin="counterup">{{ clientes }}</span></h2>
+                  <h2 class="m-b-10"><span data-plugin="counterup">{{ servicios_mutuales }}</span></h2>
                 </div>
               </div>
             </a>
@@ -110,7 +110,7 @@
                   <img src="{% static 'assets/images/icons/sales_performance.svg' %}">
                 </div>
                 <div class="text-right">
-                  <p class="m-t-5 text-uppercase font-14 font-600">INGRESOS</p>
+                  <p class="m-t-5 text-uppercase font-14 font-600">RECURSOS</p>
                   <h2 class="m-b-10"><span data-plugin="counterup">{{ ingresos }}</span></h2>
                 </div>
               </div>
