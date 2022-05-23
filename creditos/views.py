@@ -556,6 +556,127 @@ class GrupoWizard(WizardLiquidacionManager, SessionWizardView):
 		messages.success(self.request, envioAFIP)
 		return redirect('facturacion')
 
+@method_decorator(group_required('administrativo'), name='dispatch')
+class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
+
+	form_list = [
+		('inicial', InicialForm),
+		('individuales', IndividualesForm),
+		('plazos', PlazoFormSet),
+		('confirmacion', ConfirmacionForm)
+	]
+
+	def get_template_names(self):
+		return [self.TEMPLATES[self.steps.current]]
+
+	def get_context_data(self, form, **kwargs):
+		context = super().get_context_data(form=form, **kwargs)
+		tipo = "Individuales"
+		if self.steps.current == 'plazos':
+			data_individuales = self.get_cleaned_data_for_step('individuales')
+			ingresos = set([data['ingreso'] for data in data_individuales if data])
+			accesorios = self.obtener_accesorios(ingresos)
+
+		elif self.steps.current == 'confirmacion':
+			data_plazos = self.hacer_plazos()
+			liquidacion = self.hacer_liquidacion('individuales')
+
+		context.update(locals())
+
+		return context
+
+@method_decorator(group_required('administrativo'), name='dispatch')
+class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
+
+	form_list = [
+		('inicial', InicialForm),
+		('masivo', MasivoFormSet),
+		('plazos', PlazoFormSet),
+		('preconceptos', PreConceptoForm),
+		('confirmacion', ConfirmacionForm)
+	]
+
+	def get_template_names(self):
+		return [self.TEMPLATES[self.steps.current]]
+
+	def get_context_data(self, form, **kwargs):
+		context = super().get_context_data(form=form, **kwargs)
+		tipo = "Masivo"
+		data_masivo = self.get_cleaned_data_for_step('masivo')
+		if data_masivo:
+			ingresos = set([data['ingreso'] for data in data_masivo if data])
+			accesorios = self.obtener_accesorios(ingresos)
+
+
+		if self.steps.current == 'confirmacion':
+			data_preconceptos = self.hacer_preconceptos()
+			data_plazos = self.hacer_plazos()
+			liquidacion = self.hacer_liquidacion('masivo')
+
+		context.update(locals())
+
+		return context
+
+@method_decorator(group_required('administrativo'), name='dispatch')
+class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
+
+	form_list = [
+		('inicial', InicialForm),
+		('grupo', MasivoFormSet),
+		('plazos', PlazoFormSet),
+		('confirmacion', ConfirmacionForm)
+	]
+
+	def get_template_names(self):
+		return [self.TEMPLATES[self.steps.current]]
+
+	def get_context_data(self, form, **kwargs):
+		context = super().get_context_data(form=form, **kwargs)
+		tipo = "Por Grupos"
+		data_grupo = self.get_cleaned_data_for_step('grupo')
+		if data_grupo:
+			ingresos = set([data['ingreso'] for data in data_grupo if data])
+			accesorios = self.obtener_accesorios(ingresos)
+
+		if self.steps.current == 'confirmacion':
+			data_plazos = self.hacer_plazos()
+			liquidacion = self.hacer_liquidacion('grupo')
+
+		context.update(locals())
+
+		return context
+
+
+	def get_form_kwargs(self, step):
+		kwargs = super().get_form_kwargs()
+		if step == "inicial":
+			kwargs.update({
+					'consorcio': consorcio(self.request),
+					'ok_grupos': True,
+				})
+		return kwargs
+
+	def get_form(self, step=None, data=None, files=None):
+		form = super().get_form(step, data, files)
+		formset = False
+		if data:
+			if 'grupo' in data['grupo_wizard-current_step']:
+				formset = True
+		if step == "grupo":
+			formset = True
+
+		if formset:
+			formset = formset_factory(wraps(MasivoForm)(partial(MasivoForm, consorcio=consorcio(self.request))), extra=1)
+			form = formset(prefix='grupo', data=data)
+		return form
+
+	@transaction.atomic
+	def done(self, form_list, **kwargs):
+		liquidacion = self.hacer_liquidacion('grupo')
+		liquidacion = liquidacion.guardar()
+		messages.success(self.request, envioAFIP)
+		return redirect('facturacion')
+
 
 @method_decorator(group_required('administrativo', 'contable'), name='dispatch')
 class RegistroLiquidaciones(OrderQS):

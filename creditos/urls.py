@@ -17,6 +17,9 @@ urlpatterns = [
 	path('nuevo/conceptos/', ConceptoWizard.as_view(), name='nuevo-conceptos'),
 	path('nuevo/conceptos/importacion/', ConceptoImportacionWizard.as_view(), name='nuevo-conceptos-importacion'),
 	path('nuevo/recurso/', RecursoWizard.as_view(), name='nuevo-recurso'),
+	path('nuevo/comprobante/individuales', CindividualesWizard.as_view(), name='nuevo-comprobante-individual'),
+	path('nuevo/comprobante/masivo', CmasivoWizard.as_view(), name='nuevo-comprobante-masivo'),
+	path('nuevo/comprobante/grupos', CgruposWizard.as_view(), name='nuevo-comprobante-grupos'),
 	# Registros
 	path('registro/liquidaciones/', RegistroLiquidaciones.as_view(), name='registro de liquidaciones'),
 	path('registro/creditos/', RegistroCreditos.as_view(), name='registro de creditos'),
