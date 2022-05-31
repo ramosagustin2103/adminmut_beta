@@ -134,7 +134,9 @@ class WizardLiquidacionManager:
 		data_creditos = self.get_cleaned_data_for_step(tipo)
 		data_plazos = self.get_cleaned_data_for_step('plazos')
 		creditos = []
+		socios = Socio.objects.filter(consorcio=consorcio(self.request), es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=True)
 		dominios = Dominio.objects.filter(consorcio=consorcio(self.request), padre__isnull=True, socio__isnull=False)
+		q_socios = dominios.count()
 		q_dominios = dominios.count()
 		total_m2 = dominios.aggregate(suma=Sum('superficie_total'))['suma']
 
@@ -170,30 +172,21 @@ class WizardLiquidacionManager:
 							'periodo':data_inicial['fecha_operacion'],
 							'ingreso':d['ingreso'],
 						}
-						for dominio in dominios:
+						for socio in socios:
 							credito = base_credito.copy()
-							credito['dominio'] = dominio
-							credito['socio'] = dominio.socio
+							credito['dominio'] = None
+							credito['socio'] = socio
 
-							if d['distribucion'] == "total_dominio":
-								credito['capital'] = round(d['subtotal']/q_dominios,2)
-							elif d['distribucion'] == "dominio":
+							if d['distribucion'] == "total_socio":
+								credito['capital'] = round(d['subtotal']/q_socios,2)
+							elif d['distribucion'] == "socio":
 								credito['capital'] = round(d['subtotal'],2)
-							else:
-								superficie = dominio.superficie_total or 0.00
-								superficie = Decimal("%.2f" % superficie)
-								if d['distribucion'] == "total_m2":
-									credito['capital'] = round(d['subtotal']/total_m2*superficie,2)
-								elif d['distribucion'] == "m2":
-									credito['capital'] = round(d['subtotal']*superficie,2)
 							creditos.append(credito)
 
 		elif tipo == "grupo":
-			grupos = Grupo.objects.filter(id__in=data_inicial['grupos'])
-			todos_los_dominios_de_los_grupos = Dominio.objects.filter(id__in=[d.id for g in grupos for d in g.dominios.all()]) # Unificados o no
-			dominios_de_los_grupos = todos_los_dominios_de_los_grupos.filter(padre__isnull=True) # Los Cabezas
-			q_dominios_de_los_grupos = dominios_de_los_grupos.count()
-			total_m2_de_los_grupos = todos_los_dominios_de_los_grupos.aggregate(suma=Sum('superficie_total'))['suma']
+			grupos = Tipo_asociado.objects.filter(id__in=data_inicial['tipo_asociado'])
+			todos_los_socios_de_los_grupos = Socio.objects.filter(tipo_asociado__in=grupos)
+			q_socios_de_los_grupos = todos_los_socios_de_los_grupos.count()
 			for d in data_creditos:
 				if d:
 					if d['subtotal']:
@@ -202,26 +195,14 @@ class WizardLiquidacionManager:
 							'periodo':data_inicial['fecha_operacion'],
 							'ingreso':d['ingreso'],
 						}
-						for dominio in dominios_de_los_grupos:
+						for socio in todos_los_socios_de_los_grupos:
 							credito = base_credito.copy()
-							credito['dominio'] = dominio
-							credito['socio'] = dominio.socio
-
-
-							if d['distribucion'] == "total_dominio":
-								credito['capital'] = round(d['subtotal']/q_dominios_de_los_grupos,2)
-							elif d['distribucion'] == "dominio":
+							credito['socio'] = socio
+							if d['distribucion'] == "total_socio":
+								credito['capital'] = round(d['subtotal']/q_socios_de_los_grupos,2)
+							elif d['distribucion'] == "socio":
 								credito['capital'] = round(d['subtotal'],2)
-							else:
-								superficie = dominio.superficie_total
-								for hijo in dominio.hijos.all():
-									superficie += hijo.superficie_total
-
-								if d['distribucion'] == "total_m2":
-									credito['capital'] = round(d['subtotal']/total_m2_de_los_grupos*superficie,2)
-								elif d['distribucion'] == "m2":
-									credito['capital'] = round(d['subtotal']*superficie,2)
-
+							print(creditos)
 							creditos.append(credito)
 
 		return creditos
@@ -252,7 +233,10 @@ class WizardLiquidacionManager:
 		""" Retorna una lista de diccionarios a traves del manager para crear liquidacion """
 
 		data_inicial = self.get_cleaned_data_for_step('inicial')
-		
+		try:
+			fecha_factura = data_inicial['fecha_factura']
+		except:
+			data_inicial['fecha_factura'] = data_inicial['fecha_operacion']		
 		data_creditos = self.hacer_creditos(tipo)
 		preconceptos = None if tipo != "masivo" else self.hacer_preconceptos()
 		data_plazos = self.hacer_plazos()
@@ -353,7 +337,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	form_list = [
 		('inicial', InicialForm),
-		('individuales', IndividualesForm),
+		('individuales', IndividualesRecursoForm),
 		('plazos', PlazoFormSet),
 		('confirmacion', ConfirmacionForm)
 	]
@@ -381,12 +365,13 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	def get_form_kwargs(self, step):
 		kwargs = super().get_form_kwargs()
-		if step in ["individuales", 'inicial']:
-			kwargs.update({
+		if step == "individuales":
+				kwargs.update({
 				'consorcio': consorcio(self.request),
 				})
 		if step == "inicial":
 			kwargs.update({
+				'consorcio': consorcio(self.request),
 				'rename_factura': True,
 				})
 		if step == "confirmacion":
@@ -407,7 +392,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 			formset = True
 
 		if formset:
-			formset = formset_factory(wraps(IndividualesForm)(partial(IndividualesForm, consorcio=consorcio(self.request))), extra=1)
+			formset = formset_factory(wraps(IndividualesRecursoForm)(partial(IndividualesRecursoForm, consorcio=consorcio(self.request))), extra=1)
 			form = formset(prefix='individuales', data=data)
 		return form
 

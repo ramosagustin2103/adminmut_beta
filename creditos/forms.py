@@ -43,7 +43,7 @@ class InicialForm(FormControl, forms.Form):
 	fecha_operacion = forms.DateField(label="Fecha de la operacion", widget=forms.TextInput(attrs={'placeholder':'YYYY-MM-DD'}))
 	fecha_factura = forms.DateField(label="Fecha de la factura", widget=forms.TextInput(attrs={'placeholder':'YYYY-MM-DD'}))
 	ingreso = forms.ModelChoiceField(queryset=Ingreso.objects.none(), empty_label="-- Seleccionar Ingreso --", label="Ingresos")
-	grupos = forms.MultipleChoiceField(choices=((None,None),))
+	tipo_asociado = forms.MultipleChoiceField(choices=((None,None),))
 
 	def __init__(self, *args, **kwargs):
 		consorcio = kwargs.pop('consorcio')
@@ -68,11 +68,11 @@ class InicialForm(FormControl, forms.Form):
 		super().__init__(*args, **kwargs)
 
 		if ok_grupos:
-			gr = Grupo.objects.filter(consorcio=consorcio)
+			gr = Tipo_asociado.objects.filter(consorcio=consorcio, baja__isnull=True)
 			GRUPO_CHOICES = ((g.id, g.nombre) for g in gr)
-			self.fields['grupos'].choices = GRUPO_CHOICES
+			self.fields['tipo_asociado'].choices = GRUPO_CHOICES
 		else:
-			self.fields.pop('grupos')
+			self.fields.pop('tipo_asociado')
 		self.fields['punto'].queryset = PointOfSales.objects.filter(owner=consorcio.contribuyente)
 
 		if ok_conceptos:
@@ -127,7 +127,7 @@ class ConceptosForm(FormControl, forms.Form):
 		self.fields['destinatario'].choices = choices
 
 
-class IndividualesForm(FormControl, forms.Form):
+class IndividualesRecursoForm(FormControl, forms.Form):
 
 	""" Formulario individuales de liquidaciones """
 
@@ -155,6 +155,29 @@ class IndividualesForm(FormControl, forms.Form):
 		self.fields['destinatario'].choices = choices
 		self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio)
 
+class IndividualesForm(FormControl, forms.Form):
+
+	""" Formulario individuales de liquidaciones """
+
+	destinatario = forms.ChoiceField(label="Destinatario")
+	ingreso = forms.ModelChoiceField(queryset=Ingreso.objects.none(), empty_label="-- Seleccionar ingreso --", label="Ingreso")
+	subtotal = forms.DecimalField(max_digits=20, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+	detalle = forms.CharField(max_length=30, required=False)
+
+	def __init__(self, consorcio, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		choices = [(None, '-- Seleccione Destinatario --')]
+		asociados = Socio.objects.filter(consorcio=consorcio, es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=True)
+		if asociados:
+			choices.append((None, '------ Padron de asociados ------'))
+			for s in asociados:
+				dato = 'socio-{}'.format(s.id)
+				choices.append((dato, s.nombre_completo))
+		self.fields['destinatario'].choices = choices
+		self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio)
+
+
+
 
 class PlazoForm(FormControl, forms.Form):
 
@@ -171,10 +194,8 @@ PlazoFormSet = formset_factory(
 
 DISTRIBUCION_CHOICES = (
 	(None, '-- Seleccionar Distribucion --'),
-	('total_dominio', 'Total distribuible por dominio'),
-	('dominio', 'Por dominio'),
-	('total_m2', 'Total distribuible por m2'),
-	('m2', 'Por m2')
+	('socio', 'Por socio'),
+	('total_socio', 'Total distribuible por socio')
 )
 
 class MasivoForm(FormControl, forms.Form):
@@ -210,11 +231,10 @@ class PreConceptoForm(FormControl, forms.Form):
 		CONCEPTO_CHOICES = []
 		for c in conceptos:
 			periodo = "{}-{}".format(c.periodo.year, c.periodo.month)
-			nombre = "{}. {} del socio: {}, dominio: {} por ${}".format(
+			nombre = "{}. {} al asociado: {} por ${}".format(
 				c.ingreso,
 				periodo,
 				c.socio,
-				c.dominio,
 				c.capital
 			)
 			CONCEPTO_CHOICES.append((c.id, nombre))
