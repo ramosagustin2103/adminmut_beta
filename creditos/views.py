@@ -524,7 +524,7 @@ class GrupoWizard(WizardLiquidacionManager, SessionWizardView):
 		form = super().get_form(step, data, files)
 		formset = False
 		if data:
-			if 'grupo' in data['grupo_wizard-current_step']:
+			if 'grupo' in data['cgrupo_wizard-current_step']:
 				formset = True
 		if step == "grupo":
 			formset = True
@@ -570,6 +570,55 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 		return context
 
+
+	def get_form_kwargs(self, step):
+		kwargs = super().get_form_kwargs()
+		if step in ["inicial", "individuales"]:
+			kwargs.update({
+					'consorcio': consorcio(self.request)
+				})
+		if step == "confirmacion":
+			liquidacion = self.hacer_liquidacion('individuales')
+			mostrar = len(liquidacion.listar_documentos()) == 1
+			kwargs.update({
+					'mostrar': mostrar
+				})
+		return kwargs
+
+	def get_form(self, step=None, data=None, files=None):
+		form = super().get_form(step, data, files)
+		formset = False
+		if data:
+			if 'individuales' in data['cindividuales_wizard-current_step']:
+				formset = True
+		if step == "individuales":
+			formset = True
+
+		if formset:
+			formset = formset_factory(wraps(IndividualesForm)(partial(IndividualesForm, consorcio=consorcio(self.request))), extra=1)
+			form = formset(prefix='individuales', data=data)
+		return form
+
+	@transaction.atomic
+	def done(self, form_list, **kwargs):
+		liquidacion = self.hacer_liquidacion('individuales')
+		liquidacion = liquidacion.guardar()
+		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
+		if contado:
+			factura = liquidacion.factura_set.first()
+			creditos = factura.incorporar_creditos()
+			factura.validar_factura()
+
+			liquidacion.confirmar()
+			if liquidacion.estado == "confirmado":
+				return redirect('nuevo-rcx-factura', pk=factura.pk)
+			else:
+				messages.error(self.request, factura.observacion)
+		else:
+			messages.success(self.request, envioAFIP)
+		return redirect('facturacion')
+
+
 @method_decorator(group_required('administrativo'), name='dispatch')
 class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 
@@ -601,6 +650,36 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 		context.update(locals())
 
 		return context
+
+	def get_form_kwargs(self, step):
+		kwargs = super().get_form_kwargs()
+		if step in ["inicial", "preconceptos"]:
+			kwargs.update({
+					'consorcio': consorcio(self.request)
+				})
+		return kwargs
+
+	def get_form(self, step=None, data=None, files=None):
+		form = super().get_form(step, data, files)
+		formset = False
+		if data:
+			if 'masivo' in data['cmasivo_wizard-current_step']:
+				formset = True
+		if step == "masivo":
+			formset = True
+
+		if formset:
+			formset = formset_factory(wraps(MasivoForm)(partial(MasivoForm, consorcio=consorcio(self.request))), extra=1)
+			form = formset(prefix='masivo', data=data)
+		return form
+
+	@transaction.atomic
+	def done(self, form_list, **kwargs):
+		liquidacion = self.hacer_liquidacion('masivo')
+		liquidacion = liquidacion.guardar()
+		messages.success(self.request, envioAFIP)
+		return redirect('facturacion')
+
 
 @method_decorator(group_required('administrativo'), name='dispatch')
 class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
@@ -645,7 +724,7 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 		form = super().get_form(step, data, files)
 		formset = False
 		if data:
-			if 'grupo' in data['grupo_wizard-current_step']:
+			if 'grupo' in data['cgrupos_wizard-current_step']:
 				formset = True
 		if step == "grupo":
 			formset = True
