@@ -26,8 +26,7 @@
           <table class="table anopa display nowrap" style="width:100%">
               <thead>
               <tr>
-                  <th>Dominio</th>
-                  <th>Socio</th>
+                  <th>Asociado</th>
                   <th>Concepto</th>
                   <th>Periodo</th>
                   <th class="text-right">Capital</th>
@@ -37,7 +36,6 @@
                 {% for concepto in conceptos %}
                   <input type="hidden" name="conceptos[]" value={{concepto.id}}>
                     <tr>
-                      <td>{{ concepto.dominio.nombre|default:"Cliente" }}</td>
                       <td>{{ concepto.socio }}</td>
                       <td>{{ concepto.ingreso }}</td>
                       <td>{{ concepto.periodo|date:"Y-m" }}</td>

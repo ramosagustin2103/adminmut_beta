@@ -1086,7 +1086,6 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 		return redirect('cobranzas')
 
 
-
 @method_decorator(group_required('administrativo'), name='dispatch')
 class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 
@@ -1117,7 +1116,6 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 		# Validacion de columnas
 		columnas_necesarias = ['socio', 'fecha', 'importe', 'caja']
 		columnas_archivo = datos.headers
-		print("hola")
 		errores = ['Falta la columna "{}" en el archivo que deseas importar'.format(columna) for columna in columnas_necesarias if not columna in columnas_archivo]
 		if errores:
 			return errores
@@ -1128,7 +1126,7 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 		for s in data_socios:
 			if not s in socios.keys():
 				try:
-					socios[s] = Socio.objects.get(consorcio=consorcio(self.request), id=s)
+					socios[s] = Socio.objects.get(consorcio=consorcio(self.request), numero_asociado=s)
 				except:
 					pass
 
@@ -1245,5 +1243,4 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 		CobroExp.objects.bulk_create(cobrosexp)
 		messages.success(self.request, "Cobros guardados con exito")
 		return redirect('cobranzas')
-
 

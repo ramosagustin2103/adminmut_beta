@@ -15,7 +15,7 @@ class CreditoForm(FormControl, forms.ModelForm):
 	class Meta:
 		model = Credito
 		fields = [
-			'dominio', 'ingreso',
+			'ingreso',
 			'periodo', 'capital',
 			'detalle'
 		]
@@ -26,9 +26,7 @@ class CreditoForm(FormControl, forms.ModelForm):
 	def __init__(self, consorcio=None, *args, **kwargs):
 		self.consorcio = consorcio
 		super().__init__(*args, **kwargs)
-		self.fields['dominio'].queryset = Dominio.objects.filter(consorcio=consorcio, padre__isnull=True)
 		self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio)
-		self.fields['dominio'].label_from_instance = self.label_from_instance
 
 	def label_from_instance(self, obj):
 		return "{} - {}".format(obj.socio, obj.nombre)
@@ -116,15 +114,14 @@ class ConceptosForm(FormControl, forms.Form):
 	def __init__(self, consorcio, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		choices = [(None, '-- Seleccione Destinatario --')]
-		choices.append((None, '------ Dominios ------'))
-		for dominio in Dominio.objects.filter(consorcio=consorcio, padre__isnull=True, socio__isnull=False):
-			dato = 'dominio-{}'.format(dominio.id)
-			choices.append((dato, "{}. {}".format(dominio.socio, dominio.nombre)))
-		choices.append((None, '------ Clientes ------'))
-		for cliente in Socio.objects.filter(consorcio=consorcio, es_socio=False):
-			dato = 'socio-{}'.format(cliente.id)
-			choices.append((dato, cliente.nombre_completo))
+		asociados = Socio.objects.filter(consorcio=consorcio, es_socio=True, baja__isnull=True, nombre_servicio_mutual__isnull=True)
+		if asociados:
+			choices.append((None, '------ Padron de asociados ------'))
+			for s in asociados:
+				dato = 'socio-{}'.format(s.id)
+				choices.append((dato, s.nombre_completo))
 		self.fields['destinatario'].choices = choices
+
 
 
 class IndividualesRecursoForm(FormControl, forms.Form):

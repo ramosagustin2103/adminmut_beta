@@ -155,13 +155,7 @@
         </td>
         <td>{{objeto.nombre}}</td>
         <td>{{objeto.apellido}}</td>
-        <td>
-          {% for dominio in objeto.socio.all %}
-            #{{dominio}}{% if not forloop.last %};{% endif %}
-    
-    
-            {%endfor%}
-        </td>
+        <td>{{objeto.numero_asociado|default:""}}</td>
         <td>{{objeto.tipo_asociado|default:""}}</td>        
         <td>
           {% if objeto.tipo_documento and objeto.numero_documento %}

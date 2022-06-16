@@ -26,8 +26,8 @@
             <table class="table table-condensed table-bordered">
               <thead>
                 <tr>
-                  <th>Dominio</th>
-                  <th>Socio</th>
+                  <th>Numero Asociado</th>                  
+                  <th>Asociado</th>
                   <th>Recurso</th>
                   <th>Periodo</th>
                   <th class="text-right">Capital</th>
@@ -38,7 +38,7 @@
               <tbody>
                 {% for credito in creditos %}
                   <tr>
-                    <td>{{ credito.dominio.nombre }}</td>
+                    <td>{{ credito.socio.numero_asociado }}</td>
                     <td>{{ credito.socio }}</td>
                     <td>{{ credito.ingreso }}</td>
                     <td>{{ credito.periodo|date:"m-Y" }}</td>

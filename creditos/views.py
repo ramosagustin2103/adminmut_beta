@@ -557,6 +557,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 	def get_context_data(self, form, **kwargs):
 		context = super().get_context_data(form=form, **kwargs)
 		tipo = "Individuales"
+		peticion ="liquidacion de comprobantes no fiscales"
 		if self.steps.current == 'plazos':
 			data_individuales = self.get_cleaned_data_for_step('individuales')
 			ingresos = set([data['ingreso'] for data in data_individuales if data])
@@ -637,6 +638,7 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 		context = super().get_context_data(form=form, **kwargs)
 		tipo = "Masivo"
 		data_masivo = self.get_cleaned_data_for_step('masivo')
+		peticion = "liquidacion de comprobantes no fiscales"
 		if data_masivo:
 			ingresos = set([data['ingreso'] for data in data_masivo if data])
 			accesorios = self.obtener_accesorios(ingresos)
@@ -697,6 +699,7 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 	def get_context_data(self, form, **kwargs):
 		context = super().get_context_data(form=form, **kwargs)
 		tipo = "Por Grupos"
+		peticion = "liquidacion de comprobantes no fiscales"		
 		data_grupo = self.get_cleaned_data_for_step('grupo')
 		if data_grupo:
 			ingresos = set([data['ingreso'] for data in data_grupo if data])
@@ -1042,7 +1045,7 @@ class ConceptoImportacionWizard(WizardLiquidacionManager, SessionWizardView):
 		"""
 
 		# Validacion de columnas
-		columnas_necesarias = ['ingreso', 'dominio', 'periodo', 'capital', 'detalle']
+		columnas_necesarias = ['ingreso', 'asociado', 'periodo', 'capital', 'detalle']
 		columnas_archivo = datos.headers
 		errores = ['Falta la columna "{}" en el archivo que deseas importar'.format(columna) for columna in columnas_necesarias if not columna in columnas_archivo]
 		if errores:
@@ -1058,18 +1061,18 @@ class ConceptoImportacionWizard(WizardLiquidacionManager, SessionWizardView):
 				except:
 					pass
 
-		data_dominios = set(datos['dominio'])
-		dominios = {}
-		for d in data_dominios:
-			if not d in dominios.keys():
+		data_asociado = set(datos['asociado'])
+		asociados = {}
+		for d in data_asociado:
+			if not d in asociados.keys():
 				try:
-					dominios[d] = Dominio.objects.get(consorcio=consorcio(self.request), numero=str(d))
+					asociados[d] = Socio.objects.get(consorcio=consorcio(self.request), numero_asociado=int(d))
 				except:
 					pass
 
 		return {
 			'ingresos': ingresos,
-			'dominios': dominios,
+			'asociados': asociados,
 		}
 
 	def obtener_accesorios(self, ingresos):
@@ -1099,11 +1102,11 @@ class ConceptoImportacionWizard(WizardLiquidacionManager, SessionWizardView):
 
 		fila = 2 # Fila posterior a la de los titulos de las columnas
 		for d in datos:
-			if d['ingreso'] and d['dominio'] and d['periodo']:
+			if d['ingreso'] and d['asociado'] and d['periodo']:
 				try:
 					ingreso = objetos_limpios['ingresos'][d['ingreso']]
 					try:
-						dominio = objetos_limpios['dominios'][d['dominio']]
+						asociado = objetos_limpios['asociados'][d['asociado']]
 						try:
 							periodo = self.convertirFecha(d['periodo'])
 							try:
@@ -1112,8 +1115,7 @@ class ConceptoImportacionWizard(WizardLiquidacionManager, SessionWizardView):
 									'consorcio':consorcio(self.request),
 									'periodo':periodo,
 									'ingreso':ingreso,
-									'dominio':dominio,
-									'socio':dominio.socio,
+									'socio':asociado,
 									'capital':capital,
 									'detalle':d['detalle'],
 								})
@@ -1122,7 +1124,7 @@ class ConceptoImportacionWizard(WizardLiquidacionManager, SessionWizardView):
 						except:
 							errores.append("Linea {}: Debe escribir una fecha valida en periodo".format(fila))
 					except:
-						errores.append("Linea {}: No se reconoce el dominio".format(fila))
+						errores.append("Linea {}: No se reconoce el numero de asociado".format(fila))
 				except:
 					errores.append("Linea {}: No se reconoce el tipo de ingreso".format(fila))
 
@@ -1193,9 +1195,7 @@ class EditarConcepto(HeaderExeptMixin, generic.UpdateView):
 	@transaction.atomic
 	def form_valid(self, form):
 		retorno = super().form_valid(form)
-		dominio = form.cleaned_data['dominio']
 		objeto = self.get_object()
-		objeto.socio = dominio.socio
 		objeto.save()
 		return retorno
 
