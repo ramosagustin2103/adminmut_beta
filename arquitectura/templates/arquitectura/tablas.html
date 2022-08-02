@@ -155,7 +155,11 @@
         </td>
         <td>{{objeto.nombre}}</td>
         <td>{{objeto.apellido}}</td>
-        <td>{{objeto.numero_asociado|default:""}}</td>
+        <td>
+          {% if not objeto.nombre_servicio_mutual %}
+           {{objeto.numero_asociado|default:""}}
+          {% endif %}
+        </td>
         <td>{{objeto.tipo_asociado|default:""}}</td>        
         <td>
           {% if objeto.tipo_documento and objeto.numero_documento %}

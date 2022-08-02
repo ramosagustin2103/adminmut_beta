@@ -8,7 +8,9 @@
           <th>Cupon ExpensasPagas</th>
         {% endif %}        
         <th>Fecha</th>
-        <th>Dominio</th>
+        {% if not user.groups.first.name == "socio" %}
+          <th class="text-right">Nª de Asoc.</th>
+        {% endif %}
         {% if not user.groups.first.name == "socio" %}
           <th>Destinatario</th>
         {% endif %}
@@ -40,7 +42,9 @@
               </td>
             {% endif %}                    
             <td>{{credito.fecha|date:"d/m/Y"}}</td>
-            <td>{{ credito.dominio.nombre|default:"Cliente" }}</td>
+            {% if not user.groups.first.name == "socio" %}
+              <td class="text-center">{{ credito.socio.numero_asociado }}</td>
+            {% endif %}
             {% if not user.groups.first.name == "socio" %}
               <td>{{ credito.socio }}</td>
             {% endif %}

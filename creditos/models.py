@@ -310,7 +310,9 @@ class Factura(models.Model):
 				}
 			if self.receipt.receipt_type.code == "11":
 				generator = ReceiptBarcodeGenerator(self.receipt)
-				barcode = base64.b64encode(generator.generate_barcode()).decode("utf-8")
+				codigo = generator.full_number
+				barcode = codigo
+				#barcode = base64.b64encode(generator.generate_barcode()).decode("utf-8")
 			html_string = render_to_string('creditos/pdfs/{}.html'.format(self.receipt.receipt_type.code), locals())
 			html = HTML(string=html_string, base_url='https://www.admincu.com/comprobantes/')
 			pdfFactura = html.render()

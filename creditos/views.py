@@ -228,7 +228,7 @@ class WizardLiquidacionManager:
 
 		return Credito.objects.filter(id__in=self.get_cleaned_data_for_step('preconceptos')['conceptos'])
 
-	def hacer_liquidacion(self, tipo):
+	def hacer_liquidacion(self, tipo, no_fiscal=None):
 
 		""" Retorna una lista de diccionarios a traves del manager para crear liquidacion """
 
@@ -240,12 +240,21 @@ class WizardLiquidacionManager:
 		data_creditos = self.hacer_creditos(tipo)
 		preconceptos = None if tipo != "masivo" else self.hacer_preconceptos()
 		data_plazos = self.hacer_plazos()
-		liquidacion = LiquidacionCreator(
-				data_inicial=data_inicial,
-				data_creditos=data_creditos,
-				data_plazos=data_plazos,
-				preconceptos=preconceptos
-			)
+		if not no_fiscal:
+			liquidacion = LiquidacionCreator(
+					data_inicial=data_inicial,
+					data_creditos=data_creditos,
+					data_plazos=data_plazos,
+					preconceptos=preconceptos
+				)
+		else:
+			liquidacion = LiquidacionCreator(
+					data_inicial=data_inicial,
+					data_creditos=data_creditos,
+					data_plazos=data_plazos,
+					preconceptos=preconceptos,
+					no_fiscal=no_fiscal
+				)			
 		return liquidacion
 
 
@@ -375,7 +384,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 				'rename_factura': True,
 				})
 		if step == "confirmacion":
-			liquidacion = self.hacer_liquidacion('individuales')
+			liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
 			mostrar = len(liquidacion.listar_documentos()) == 1
 			kwargs.update({
 					'mostrar': mostrar,
@@ -398,7 +407,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('individuales')
+		liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
 		liquidacion = liquidacion.guardar()
 		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
 		if contado:
