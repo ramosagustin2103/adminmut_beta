@@ -574,7 +574,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 		elif self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('individuales')
+			liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
 
 		context.update(locals())
 
@@ -611,7 +611,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('individuales')
+		liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
 		liquidacion = liquidacion.guardar()
 		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
 		if contado:
@@ -656,7 +656,7 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 		if self.steps.current == 'confirmacion':
 			data_preconceptos = self.hacer_preconceptos()
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('masivo')
+			liquidacion = self.hacer_liquidacion('masivo', no_fiscal=True)
 
 		context.update(locals())
 
@@ -686,7 +686,7 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('masivo')
+		liquidacion = self.hacer_liquidacion('masivo', no_fiscal=True)
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
 		return redirect('facturacion')
@@ -716,7 +716,7 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 
 		if self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('grupo')
+			liquidacion = self.hacer_liquidacion('grupo', no_fiscal=True)
 
 		context.update(locals())
 
@@ -748,7 +748,7 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('grupo')
+		liquidacion = self.hacer_liquidacion('grupo', no_fiscal=True)
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
 		return redirect('facturacion')

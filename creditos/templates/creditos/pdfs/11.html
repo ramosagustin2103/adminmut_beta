@@ -65,7 +65,6 @@
       <table>
         <thead>
           <tr>
-            <th>Dominio</th>
             <th>Concepto</th>
             <th>Periodo</th>
             <th>Capital</th>
@@ -76,7 +75,6 @@
         <tbody>
           {% for credito in factura.credito_set.all %}
             <tr>
-              <td>{{ credito.dominio.nombre }}</td>
               <td>{{ credito.ingreso }}{% if credito.detalle_limpio %}*{% endif %}</td>
               <td>{{ credito.periodo|date:"Y-m" }}</td>
               <td>{{ credito.capital|intcomma }}</td>
