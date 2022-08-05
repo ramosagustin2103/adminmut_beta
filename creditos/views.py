@@ -228,7 +228,7 @@ class WizardLiquidacionManager:
 
 		return Credito.objects.filter(id__in=self.get_cleaned_data_for_step('preconceptos')['conceptos'])
 
-	def hacer_liquidacion(self, tipo, no_fiscal=None):
+	def hacer_liquidacion(self, tipo, receipt_type):
 
 		""" Retorna una lista de diccionarios a traves del manager para crear liquidacion """
 
@@ -240,21 +240,14 @@ class WizardLiquidacionManager:
 		data_creditos = self.hacer_creditos(tipo)
 		preconceptos = None if tipo != "masivo" else self.hacer_preconceptos()
 		data_plazos = self.hacer_plazos()
-		if not no_fiscal:
-			liquidacion = LiquidacionCreator(
-					data_inicial=data_inicial,
-					data_creditos=data_creditos,
-					data_plazos=data_plazos,
-					preconceptos=preconceptos
-				)
-		else:
-			liquidacion = LiquidacionCreator(
-					data_inicial=data_inicial,
-					data_creditos=data_creditos,
-					data_plazos=data_plazos,
-					preconceptos=preconceptos,
-					no_fiscal=no_fiscal
-				)			
+		
+		liquidacion = LiquidacionCreator(
+				data_inicial=data_inicial,
+				data_creditos=data_creditos,
+				data_plazos=data_plazos,
+				preconceptos=preconceptos,
+				receipt_type=receipt_type
+			)			
 		return liquidacion
 
 
@@ -282,7 +275,7 @@ class IndividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 		elif self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('individuales')
+			liquidacion = self.hacer_liquidacion('individuales', receipt_type="11")
 
 		context.update(locals())
 
@@ -296,7 +289,7 @@ class IndividualesWizard(WizardLiquidacionManager, SessionWizardView):
 					'consorcio': consorcio(self.request)
 				})
 		if step == "confirmacion":
-			liquidacion = self.hacer_liquidacion('individuales')
+			liquidacion = self.hacer_liquidacion('individuales', receipt_type="11")
 			mostrar = len(liquidacion.listar_documentos()) == 1
 			kwargs.update({
 					'mostrar': mostrar
@@ -319,7 +312,7 @@ class IndividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('individuales')
+		liquidacion = self.hacer_liquidacion('individuales', receipt_type="11")
 		liquidacion = liquidacion.guardar()
 		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
 		if contado:
@@ -334,7 +327,7 @@ class IndividualesWizard(WizardLiquidacionManager, SessionWizardView):
 				messages.error(self.request, factura.observacion)
 		else:
 			messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 
 
@@ -366,7 +359,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 
 		elif self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('individuales')
+			liquidacion = self.hacer_liquidacion('individuales',receipt_type="104")
 
 		context.update(locals())
 
@@ -384,7 +377,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 				'rename_factura': True,
 				})
 		if step == "confirmacion":
-			liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
+			liquidacion = self.hacer_liquidacion('individuales', receipt_type="104")
 			mostrar = len(liquidacion.listar_documentos()) == 1
 			kwargs.update({
 					'mostrar': mostrar,
@@ -407,7 +400,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
+		liquidacion = self.hacer_liquidacion('individuales', receipt_type="104")
 		liquidacion = liquidacion.guardar()
 		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
 		if contado:
@@ -422,7 +415,7 @@ class RecursoWizard(WizardLiquidacionManager, SessionWizardView):
 				messages.error(self.request, factura.observacion)
 		else:
 			messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 
 
@@ -453,7 +446,7 @@ class MasivoWizard(WizardLiquidacionManager, SessionWizardView):
 		if self.steps.current == 'confirmacion':
 			data_preconceptos = self.hacer_preconceptos()
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('masivo')
+			liquidacion = self.hacer_liquidacion('masivo', receipt_type="11")
 
 		context.update(locals())
 
@@ -484,10 +477,10 @@ class MasivoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('masivo')
+		liquidacion = self.hacer_liquidacion('masivo', receipt_type="104")
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 
 @method_decorator(group_required('administrativo'), name='dispatch')
@@ -513,7 +506,7 @@ class GrupoWizard(WizardLiquidacionManager, SessionWizardView):
 
 		if self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('grupo')
+			liquidacion = self.hacer_liquidacion('grupo', receipt_type="11")
 
 		context.update(locals())
 
@@ -545,10 +538,10 @@ class GrupoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('grupo')
+		liquidacion = self.hacer_liquidacion('grupo', receipt_type="11")
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 @method_decorator(group_required('administrativo'), name='dispatch')
 class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
@@ -574,7 +567,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 		elif self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
+			liquidacion = self.hacer_liquidacion('individuales', receipt_type="101")
 
 		context.update(locals())
 
@@ -588,7 +581,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 					'consorcio': consorcio(self.request)
 				})
 		if step == "confirmacion":
-			liquidacion = self.hacer_liquidacion('individuales')
+			liquidacion = self.hacer_liquidacion('individuales', receipt_type="101")
 			mostrar = len(liquidacion.listar_documentos()) == 1
 			kwargs.update({
 					'mostrar': mostrar
@@ -611,7 +604,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('individuales', no_fiscal=True)
+		liquidacion = self.hacer_liquidacion('individuales', receipt_type="101")
 		liquidacion = liquidacion.guardar()
 		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
 		if contado:
@@ -626,7 +619,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 				messages.error(self.request, factura.observacion)
 		else:
 			messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 
 @method_decorator(group_required('administrativo'), name='dispatch')
@@ -656,7 +649,7 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 		if self.steps.current == 'confirmacion':
 			data_preconceptos = self.hacer_preconceptos()
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('masivo', no_fiscal=True)
+			liquidacion = self.hacer_liquidacion('masivo', receipt_type="101")
 
 		context.update(locals())
 
@@ -686,10 +679,10 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('masivo', no_fiscal=True)
+		liquidacion = self.hacer_liquidacion('masivo', receipt_type="101")
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 
 @method_decorator(group_required('administrativo'), name='dispatch')
@@ -716,7 +709,7 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 
 		if self.steps.current == 'confirmacion':
 			data_plazos = self.hacer_plazos()
-			liquidacion = self.hacer_liquidacion('grupo', no_fiscal=True)
+			liquidacion = self.hacer_liquidacion('grupo', receipt_type="101")
 
 		context.update(locals())
 
@@ -748,10 +741,10 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('grupo', no_fiscal=True)
+		liquidacion = self.hacer_liquidacion('grupo', receipt_type="101")
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
-		return redirect('facturacion')
+		return redirect('recursos')
 
 
 @method_decorator(group_required('administrativo', 'contable'), name='dispatch')
@@ -787,7 +780,7 @@ class HeaderExeptMixin:
 			objeto = self.model.objects.get(consorcio=consorcio(self.request), pk=kwargs['pk'])
 		except:
 			messages.error(request, 'No se pudo encontrar.')
-			return redirect('facturacion')
+			return redirect('recursos')
 
 		return super().dispatch(request, *args, **kwargs)
 
@@ -811,7 +804,7 @@ class Ver(HeaderExeptMixin, generic.DetailView):
 		disp = super().dispatch(request, *args, **kwargs)
 		if disp.status_code == 200 and self.get_object().estado in ["errores", "en_proceso"]:
 			messages.error(request, 'No se pudo encontrar.')
-			return redirect('facturacion')
+			return redirect('recursos')
 		return disp
 
 
@@ -822,7 +815,7 @@ class VerErrores(HeaderExeptMixin, generic.DeleteView):
 
 	model = Liquidacion
 	template_name = 'creditos/ver/liquidacion-errores.html'
-	success_url = '/facturacion/'
+	success_url = '/recursos/'
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
@@ -842,7 +835,7 @@ class VerErrores(HeaderExeptMixin, generic.DeleteView):
 		disp = super().dispatch(request, *args, **kwargs)
 		if disp.status_code == 200 and self.get_object().estado in ["confirmado", "en_proceso"]:
 			messages.error(request, 'No se pudo encontrar.')
-			return redirect('facturacion')
+			return redirect('recursos')
 		return disp
 
 
@@ -867,7 +860,7 @@ class PDFLiquidacion(HeaderExeptMixin, generic.DetailView):
 		disp = super().dispatch(request, *args, **kwargs)
 		if disp.status_code == 200 and self.get_object().estado in ["errores", "en_proceso"]:
 			messages.error(request, 'No se pudo encontrar.')
-			return redirect('facturacion')
+			return redirect('recursos')
 		return disp
 
 

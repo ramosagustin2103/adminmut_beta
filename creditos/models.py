@@ -340,7 +340,7 @@ class Factura(models.Model):
 			Si es "11" (Factura C) valida la factura y hace el PDF
 			o le agrega el error de AFIP en observacion
 		"""
-		if self.receipt.receipt_type.code == "101":
+		if self.receipt.receipt_type.code in ["101","104"]:
 			if not self.receipt.receipt_number:
 				last = Receipt.objects.filter(
 					receipt_type=self.receipt.receipt_type,

@@ -41,10 +41,12 @@
         <div class="client">
 
           <div class="client-data">
-            <strong>{% if factura.consorcio.id == 10 %}CLIENTE:{% else %}SOCIO:{% endif %}</strong>
+            <strong>{% if factura.consorcio.id == 10 %}CLIENTE:{% else %}ASOCIADO:{% endif %}</strong>
             {{ factura.socio }} <br>
             <strong>{{ factura.socio.tipo_documento }}:</strong>
             {{ factura.socio.numero_documento }} <br>
+            <strong>N° DE ASOCIADO:</strong>
+            {{ factura.socio.numero_asociado }} <br>
           </div>
         </div>
 

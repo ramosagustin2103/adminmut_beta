@@ -22,18 +22,9 @@
             {{ factura.consorcio.provincia }}
           </address>
 
-          <div class="receipt-type">
-            <div class="identifier">
-              {{ factura.receipt.receipt_type.description|slice:"-1:" }}
-            </div>
-            <div class="code">
-              Código {{ factura.receipt.receipt_type.code }}
-            </div>
-          </div>
-
           <div class="receipt-details">
             <div class="receipt-type-description">
-              {{ factura.receipt.receipt_type.description }}
+              CARGA DE RECURSOS
             </div>
             <strong>Nº</strong> {{ factura.formatoAfip }}<br>
             {{ factura.receipt.issued_date|date:"d/m/Y" }}<br>
@@ -50,12 +41,12 @@
         <div class="client">
 
           <div class="client-data">
-            <strong>{% if factura.consorcio.id == 10 %}CLIENTE:{% else %}ASOCIADO:{% endif %}</strong>
-            {{ factura.socio }} <br>            
-            <strong>{{ factura.socio.tipo_documento }}:</strong>
-            {{ factura.socio.numero_documento }} <br>
-            <strong>N° DE ASOCIADO:</strong>
-            {{ factura.socio.numero_asociado }} <br>
+            <strong>{% if factura.socio.nombre_servicio_mutual %}{{ factura.socio.nombre }}{% else %}ASOCIADO:</strong>
+            {{ factura.socio }}{% endif %} <br>
+            <strong>{% if not factura.socio.nombre_servicio_mutual %}{{ factura.socio.tipo_documento }}:</strong>
+            {{ factura.socio.numero_documento }} {% endif %}<br>
+            <strong>{% if not factura.socio.nombre_servicio_mutual %}N° DE ASOCIADO:</strong>
+            {{ factura.socio.numero_asociado }} {% endif %}<br>
           </div>
         </div>
 
@@ -166,24 +157,6 @@
         <p><strong>Saldo a la fecha:</strong></p>
         <p>{{texto_saldo}}</p>
       {% endif %}
-
-      <footer>
-        <div class="{% if factura.credito_set.all.count > 25 %}footer_varias_paginas{% else %}footer_recibo{% endif %}">
-        <hr>
-          <div class="cae">
-            <strong>CAE</strong>
-            {{ factura.receipt.validation.cae }}
-            <strong>Vto CAE</strong>
-            {{ factura.receipt.validation.cae_expiration|date:"d/m/Y" }}
-          </div>
-          <div class="barcode">
-            <img src="data:image/png;base64,{{barcode}}">
-          </div>
-          <div class="cae">
-            {{ barcode }}
-          </div>
-        </div>
-      </footer>
 
     </div>
   </body>

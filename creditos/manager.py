@@ -12,13 +12,13 @@ class LiquidacionCreator:
 			self,
 			data_inicial, # Diccionario LIMPIO que contiene "punto", "fecha_operacion", "concepto", "fecha_factura"
 			data_creditos, # Lista de Diccionarios LIMPIOS que contiene "campos basicos para crear objetos de credito". Ver en views.py
+			receipt_type,
 			data_plazos=None, # Lista de Diccionarios LIMPIOS que contienen "accesorio" y "plazo"
 			preconceptos=None, # QUERYSET con Objetos de tipo Credito para incorporar a la liquidacion
-			no_fiscal=None
 		):
 		self.punto = data_inicial['punto']
 		self.consorcio = self.punto.owner.consorcio_set.first()
-		self.receipt_type = ReceiptType.objects.get(code="11") if not no_fiscal else ReceiptType.objects.get(code="101") 
+		self.receipt_type = ReceiptType.objects.get(code=receipt_type)  
 		self.periodo = data_inicial['fecha_operacion']
 		self.fecha_factura = data_inicial['fecha_factura']
 		self.concepto = data_inicial['concepto']
@@ -103,8 +103,8 @@ class LiquidacionCreator:
 			point_of_sales=self.punto,
 			receipt_type=self.receipt_type,
 			concept=self.concepto,
-			document_type=socio.tipo_documento,
-			document_number=socio.numero_documento,
+			document_type= socio.tipo_documento if self.receipt_type in ["11", "101"] else DocumentType.objects.get(id=10),
+			document_number=socio.numero_documento if self.receipt_type in ["11", "101"] else 1,
 			issued_date=self.fecha_factura,
 			net_untaxed=0,
 			exempt_amount=0,
