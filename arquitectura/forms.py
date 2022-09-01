@@ -351,7 +351,7 @@ class servicioForm(FormControl, forms.ModelForm):
 		super().__init__(*args, **kwargs)
 
 		self.fields['nombre_servicio_mutual'].required = True
-
+		self.fields['nombre'].required = True
 
 class hiddenForm(forms.ModelForm):
 

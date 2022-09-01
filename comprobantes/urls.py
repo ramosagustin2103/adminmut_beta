@@ -13,6 +13,7 @@ urlpatterns = [
 	path('RCXEXP/', RCXEXPWizard.as_view(), name='nuevo-rcxexp'),
 	path('RCXEXP/masivo/', RCXEXPMWizard.as_view(), name='nuevo-rcxexp-masivo'),
 	path('NCC/', NCCWizard.as_view(), name='nuevo-ncc'),
+	path('NCNF/', NCNFWizard.as_view(), name='nuevo-ncnf'),
 	path('cobros/importacion/', CobrosImportacionWizard.as_view(), name='nuevo-cobros-importacion'),
 
 

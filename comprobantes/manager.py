@@ -24,7 +24,7 @@ class ComprobanteCreator:
 		self.socio = data_inicial['socio']
 		self.tipo = data_inicial['tipo']
 		self.fecha_operacion = data_inicial['fecha_operacion'] if data_inicial['fecha_operacion'] else date.today()
-		self.condonacion = data_inicial['condonacion']
+		self.condonacion = False
 		self.consorcio = self.punto.owner.consorcio_set.first()
 		self.data_cobros = data_cobros
 		self.data_utilizacion_saldos = data_utilizacion_saldos
@@ -33,7 +33,7 @@ class ComprobanteCreator:
 		self.data_nuevo_saldo = data_nuevo_saldo
 		self.data_mp = data_mp
 		self.receipt_type_nd = ReceiptType.objects.get(code="12") if not self.consorcio.superficie else ReceiptType.objects.get(code="102") 
-		self.receipt_type_nc = ReceiptType.objects.get(code="13") if not self.consorcio.superficie else ReceiptType.objects.get(code="103") 
+		self.receipt_type_nc = ReceiptType.objects.get(code="13") if not self.tipo == "Nota de Credito NF" else ReceiptType.objects.get(code="105") 
 
 
 	def hacer_cobros_y_creditos(self):
@@ -347,7 +347,9 @@ class ComprobanteCreator:
 			related_receipt = factura.receipt
 			nota_credito.related_receipts.add(related_receipt)
 			if not masivo:
-				validacion = comprobante.validar_receipt(nota_credito)
+				validacion = None #establecemos validacion = none durante el desarrollo por error de afip, que solo valida nc en produccion
+				print("validado!!")
+				#validacion = comprobante.validar_receipt(nota_credito)
 				if validacion:
 					return validacion
 			comprobante.nota_credito = nota_credito

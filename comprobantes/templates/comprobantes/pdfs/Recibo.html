@@ -63,7 +63,6 @@
       <table>
         <thead>
           <tr>
-            <th>Dominio</th>
             <th>Concepto</th>
             <th>Capital</th>
             <th>Int/Desc</th>
@@ -73,7 +72,6 @@
         <tbody>
           {% for cobro in comprobante.cobro_set.all %}
             <tr>
-              <td>{{ cobro.credito.dominio.nombre }}</td>
               <td>{{ cobro.credito.ingreso }} {{ cobro.credito.periodo|date:"Y-m" }}</td>
               <td>{{ cobro.capital|intcomma }}</td>
               <td>{{ cobro.int_desc|intcomma }}</td>

@@ -30,7 +30,7 @@
         	<table class="anopa table display nowrap" style="width:100%">
         		<thead>
         			<tr class="active">
-        				<th>Dominio</th>
+        				<th>Socio</th>
                 <th>Concepto</th>
                 <th>Saldo final</th>
                 <th>Pagos a cuenta</th>
@@ -47,7 +47,7 @@
                   <tr>
                     <td>
                       {% if objeto.nombre_completo %}
-                        {{objeto}} (Baja o sin dominio)
+                        {{objeto}}
                       {% else %}
                         {{objeto.socio}} - #{{objeto}}
                       {% endif %}
@@ -62,7 +62,7 @@
               {% endfor %}
             </tbody>
             <tfoot>
-              {% for dominio, ingresos in data_totales.items %}
+              {% for socio, ingresos in data_totales.items %}
                 {% for ingreso, periodos in ingresos.items %}
                   <tr class="info">
                     <th></th>

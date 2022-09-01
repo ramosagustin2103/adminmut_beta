@@ -281,13 +281,18 @@ class Socio(models.Model):
 	nombre_servicio_mutual = models.CharField(max_length=80, blank=True, null=True)
 
 	def __str__(self):
-		nombre = '{}, {}'.format(self.apellido, self.nombre)
-		return nombre
-
+		if not self.apellido:
+			n = str(self.nombre)
+		else:
+			n = '{}, {}'.format(self.apellido, self.nombre)
+		return n
 	@property
 	def nombre_completo(self):
-		return '{}, {}'.format(self.apellido, self.nombre)
-
+		if not self.apellido:
+			n = self.nombre
+		else:
+			n = '{}, {}'.format(self.apellido, self.nombre)
+		return n
 
 	def get_saldos(self, fecha=None):
 		fecha = fecha if fecha else date.today()

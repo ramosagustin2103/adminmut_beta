@@ -477,7 +477,7 @@ class MasivoWizard(WizardLiquidacionManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		liquidacion = self.hacer_liquidacion('masivo', receipt_type="104")
+		liquidacion = self.hacer_liquidacion('masivo', receipt_type="11")
 		liquidacion = liquidacion.guardar()
 		messages.success(self.request, envioAFIP)
 		return redirect('recursos')
@@ -526,7 +526,7 @@ class GrupoWizard(WizardLiquidacionManager, SessionWizardView):
 		form = super().get_form(step, data, files)
 		formset = False
 		if data:
-			if 'grupo' in data['cgrupo_wizard-current_step']:
+			if 'grupo' in data['grupo_wizard-current_step']:
 				formset = True
 		if step == "grupo":
 			formset = True
@@ -1007,7 +1007,7 @@ class ConceptoWizard(WizardLiquidacionManager, SessionWizardView):
 		data_inicial['fecha_factura'] = None
 		data_creditos = self.hacer_creditos()
 		data_plazos = self.hacer_plazos()
-		conceptos = LiquidacionCreator(data_inicial=data_inicial, data_creditos=data_creditos, data_plazos=data_plazos)
+		conceptos = LiquidacionCreator(data_inicial=data_inicial, data_creditos=data_creditos, data_plazos=data_plazos, receipt_type=104)
 		grupo_de_creditos = conceptos.reagrupar_creditos()
 		creditos = []
 		for grupo in grupo_de_creditos:
@@ -1172,7 +1172,7 @@ class ConceptoImportacionWizard(WizardLiquidacionManager, SessionWizardView):
 		objetos_limpios = self.limpiar_datos(datos)
 		data_creditos, errores = self.hacer_creditos(datos, objetos_limpios)
 		data_plazos = self.hacer_plazos()
-		conceptos = LiquidacionCreator(data_inicial=data_inicial, data_creditos=data_creditos, data_plazos=data_plazos)
+		conceptos = LiquidacionCreator(data_inicial=data_inicial, data_creditos=data_creditos, data_plazos=data_plazos, receipt_type=104)
 		grupo_de_creditos = conceptos.reagrupar_creditos()
 		creditos = []
 		for grupo in grupo_de_creditos:

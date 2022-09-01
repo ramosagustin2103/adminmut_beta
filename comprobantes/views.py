@@ -128,22 +128,32 @@ class WizardComprobanteManager:
 						socio=socio,
 						liquidacion__estado="confirmado",
 						dominio__isnull=True,
-						fin__isnull=True,
+						fin__isnull=True, 
 						).order_by('periodo', 'fecha')
 			return creditos
 
 
 		data_inicial = self.hacer_inicial(tipo)
 		fecha_operacion = data_inicial['fecha_operacion'] if data_inicial['fecha_operacion'] else date.today()
-		condonacion = data_inicial['condonacion']
+		condonacion = False	
 
 		dominios = socio.socio.all()
-		#Ahora están ordenados de más antiguo a más reciente"
-		if dominios:
+		#Ahora están ordenados de más antiguo a más reciente
+		if tipo == "Nota de Credito C":
 			creditos = Credito.objects.filter(
-					dominio__in=dominios,
-					fin__isnull=True,
+					socio=socio,
 					liquidacion__estado="confirmado",
+					dominio__isnull=True,
+					fin__isnull=True,
+					factura__receipt__receipt_type__code = 11
+					).order_by('periodo', 'fecha')
+		elif tipo == "Nota de Credito NF":
+			creditos = Credito.objects.filter(
+					socio=socio,
+					liquidacion__estado="confirmado",
+					dominio__isnull=True,
+					fin__isnull=True,
+					factura__receipt__receipt_type__code = 101
 					).order_by('periodo', 'fecha')
 		else:
 			creditos = Credito.objects.filter(
@@ -152,7 +162,6 @@ class WizardComprobanteManager:
 					dominio__isnull=True,
 					fin__isnull=True,
 					).order_by('periodo', 'fecha')
-
 		if creditos:
 			cobros_mp = Cobro.objects.filter(
 					credito__in=creditos,
@@ -163,7 +172,7 @@ class WizardComprobanteManager:
 				creditos = creditos.exclude(id__in=excluir)
 
 			for c in creditos:
-				if tipo == "Nota de Credito C" and c.int_desc() < 0:
+				if tipo in ["Nota de Credito C", "Nota de Credito NF"] and c.int_desc() < 0:
 					c.neto = c.bruto
 				else:
 					c.neto = c.subtotal(fecha_operacion=fecha_operacion, condonacion=condonacion)
@@ -188,7 +197,7 @@ class WizardComprobanteManager:
 		data_inicial = self.get_cleaned_data_for_step('inicial')
 		if data_inicial:
 			data_inicial['tipo'] = tipo
-			if tipo == "Nota de Credito C":
+			if tipo in ["Nota de Credito C", "Nota de Credito NF"]:
 				data_inicial['fecha_operacion'] = None
 				data_inicial['condonacion'] = False
 			if tipo == "Recibo X exp":
@@ -287,8 +296,6 @@ class WizardComprobanteManager:
 			descripcion += data_descripcion['descripcion']
 			if data_inicial['fecha_operacion']:
 				descripcion += '* Cobrado el dia {}.'.format(data_inicial['fecha_operacion'])
-			if data_inicial['condonacion']:
-				descripcion += '* Condonacion de intereses.'
 		return descripcion
 
 
@@ -841,6 +848,89 @@ class NCCWizard(WizardComprobanteManager, SessionWizardView):
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
 		tipo = "Nota de Credito C"
+		documento = ComprobanteCreator(
+			data_inicial=self.hacer_inicial(tipo),
+			data_descripcion=self.hacer_descripcion(tipo),
+			data_cobros=self.hacer_cobros(),
+		)
+		evaluacion = documento.guardar()
+		if type(evaluacion) == list:
+			messages.error(self.request, evaluacion[0])
+		else:
+			messages.success(self.request, mensaje_success)
+		return redirect('cobranzas')
+
+
+
+@method_decorator(group_required('administrativo'), name='dispatch')
+class NCNFWizard(WizardComprobanteManager, SessionWizardView):
+
+	form_list = [
+		('inicial', InicialForm),
+		('creditos', CobroFormSet),
+		('descripcion', DescripcionForm),
+		('confirmacion', ConfirmacionForm),
+	]
+
+	def calcular_total(self, **kwargs):
+
+		""" Total particular en notas de credito """
+
+		suma = 0
+		for k, v in kwargs.items():
+			if v:
+				for cobro in v:
+					suma += cobro['subtotal']
+		return suma
+
+	def get_template_names(self):
+		return [self.TEMPLATES[self.steps.current]]
+
+	def get_context_data(self, form, **kwargs):
+		context = super().get_context_data(form=form, **kwargs)
+		tipo = "Nota de Credito NF"
+		extension = 'comprobantes/nuevo/13.html'
+		data_inicial = self.hacer_inicial(tipo)
+		if data_inicial:
+			socio = data_inicial['socio']
+			cobros = self.hacer_cobros()
+			utilizacion_saldos = self.hacer_utilizaciones_de_saldos()
+			descripcion = self.hacer_descripcion(tipo)
+			suma = self.calcular_total(cobros=cobros)
+			total = suma
+
+			if self.steps.current == 'creditos':
+				creditos = self.obtener_creditos(socio, tipo)
+				bloqueo = bloqueador(creditos)
+				sumar = True
+				no_cero = True
+
+
+			elif self.steps.current == 'confirmacion':
+				documento = ComprobanteCreator(
+					data_inicial=data_inicial,
+					data_descripcion=descripcion,
+					data_cobros=cobros,
+				)
+				cobros, creditos = documento.hacer_cobros_y_creditos()
+
+		context.update(locals())
+
+		return context
+
+	def get_form_kwargs(self, step):
+		kwargs = super().get_form_kwargs()
+		if step == "inicial":
+			kwargs.update({
+					'consorcio': consorcio(self.request),
+					'ok_ncc': True
+				})
+		return kwargs
+
+
+	@transaction.atomic
+	def done(self, form_list, **kwargs):
+		tipo = "Nota de Credito NF"
 		documento = ComprobanteCreator(
 			data_inicial=self.hacer_inicial(tipo),
 			data_descripcion=self.hacer_descripcion(tipo),

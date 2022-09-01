@@ -30,13 +30,11 @@ def res_par(request, resumen):
 @require_http_methods(["POST"])
 @group_required('administrativo', 'contable')
 def res_sp(request):
-	try:
-		resumen = Resumen.objects.get(slug='saldos-pendientes-de-socios')
-		ingresos = Ingreso.objects.filter(id__in=request.POST.getlist('ingresos'))
-		dominios = Dominio.objects.filter(id__in=request.POST.getlist('dominios')).order_by('socio')
-	except:
-		messages.add_message(request, messages.ERROR, 'Has seleccionado parametros invalidos')
-		return redirect('resumenes')
+
+	resumen = Resumen.objects.get(slug='saldos-pendientes-de-socios')
+	ingresos = Ingreso.objects.filter(id__in=request.POST.getlist('ingresos'))
+	socios = Socio.objects.filter(id__in=request.POST.getlist('socios'))
+
 
 	intereses = request.POST.get('intereses')
 	fecha = datetime.strptime(request.POST.get('fecha'), '%Y-%m-%d').date()
@@ -45,7 +43,7 @@ def res_sp(request):
 	filtro = {
 		'consorcio': consorcio(request),
 		'ingreso__in': ingresos,
-		'dominio__in': dominios,
+		'socio__in': socios,
 		# 'periodo__lte': fecha,
 		'fecha__lte': fecha,
 	}
@@ -79,7 +77,7 @@ def res_sp(request):
 	periodos = sorted(periodos, reverse=True)
 	saldos = saldos.order_by('periodo')
 	data = {}
-	for d in dominios:
+	for d in socios:
 		data_ingresos = {}
 		for i in ingresos:
 			data_periodos = {}
@@ -88,17 +86,17 @@ def res_sp(request):
 			data_ingresos.update({i:data_periodos})
 		data.update({d:data_ingresos})
 
-	desuso = len(dominios) >= (0.7*len(consorcio(request).dominio_set.all()))
-	if desuso:
-		socios_desuso = Socio.objects.filter(Q(consorcio=consorcio(request), baja__isnull=False) | Q(consorcio=consorcio(request), socio__isnull=True))
-		for s in socios_desuso:
-			data_ingresos = {}
-			for i in ingresos:
-				data_periodos = {}
-				for p in periodos:
-					data_periodos.update({p: 0})
-				data_ingresos.update({i:data_periodos})
-			data.update({s:data_ingresos})
+	#desuso = len(dominios) >= (0.7*len(consorcio(request).dominio_set.all()))
+	#if desuso:
+	#	socios_desuso = Socio.objects.filter(Q(consorcio=consorcio(request), baja__isnull=False) | Q(consorcio=consorcio(request), socio__isnull=True))
+	#	for s in socios_desuso:
+	#		data_ingresos = {}
+	#		for i in ingresos:
+	#			data_periodos = {}
+	#			for p in periodos:
+	#				data_periodos.update({p: 0})
+	#			data_ingresos.update({i:data_periodos})
+	#		data.update({s:data_ingresos})
 
 	totales = {}
 	for p in periodos:
@@ -109,43 +107,42 @@ def res_sp(request):
 	if saldos:
 		for s in saldos:
 			valor = s.subtotal(fecha_operacion=fecha) if intereses else s.bruto
-			data[s.dominio][s.ingreso][date(s.periodo.year, s.periodo.month, 1)] += valor
+			data[s.socio][s.ingreso][date(s.periodo.year, s.periodo.month, 1)] += valor
 			data_totales['Totales']['Totales'][date(s.periodo.year, s.periodo.month, 1)] += valor
 
 	pagos_a_cuenta = Saldo.objects.filter(
 			consorcio=consorcio(request),
-			socio__in=set([d.socio for d in dominios]),
+			socio__in=set([d for d in socios]),
 			fecha__lte=fecha,
 			padre__isnull=True
 			)
 	if pagos_a_cuenta:
 		for p in pagos_a_cuenta:
 			valor = p.saldo(fecha=fecha)
-			data[p.socio.socio.filter(id__in=request.POST.getlist('dominios'))[0]][ingresos[0]][saldo_a_favor] -= valor
+			data[p.socio][ingresos[0]][saldo_a_favor] -= valor
 			data_totales['Totales']['Totales'][saldo_a_favor] -= valor
 
-	if desuso:
-		pagos_a_cuenta_socios_baja = Saldo.objects.filter(
-				consorcio=consorcio(request),
-				socio__in=socios_desuso,
-				fecha__lte=fecha,
-				padre__isnull=True
-				)
-		if pagos_a_cuenta_socios_baja:
-			for p in pagos_a_cuenta_socios_baja:
-				valor = p.saldo(fecha=fecha)
-				data[p.socio][ingresos[0]][saldo_a_favor] -= valor
-				data_totales['Totales']['Totales'][saldo_a_favor] -= valor	
-
-
-	for dominio, ingresos in data.copy().items():
+	#if desuso:
+	#	pagos_a_cuenta_socios_baja = Saldo.objects.filter(
+	#			consorcio=consorcio(request),
+	#			socio__in=socios_desuso,
+	#			fecha__lte=fecha,
+	#			padre__isnull=True
+	#			)
+	#	if pagos_a_cuenta_socios_baja:
+	#		for p in pagos_a_cuenta_socios_baja:
+	#			valor = p.saldo(fecha=fecha)
+	#			data[p.socio][ingresos[0]][saldo_a_favor] -= valor
+	#			data_totales['Totales']['Totales'][saldo_a_favor] -= valor	
+	#
+	for socio, ingresos in data.copy().items():
 		for i, p in ingresos.copy().items():
 			suma = sum(p.values())
 			con_valores = any(valor for valor in p.values())
 			if not con_valores:
-				data[dominio].pop(i)
+				data[socio].pop(i)
 			else:
-				data[dominio][i][saldo_final] = suma
+				data[socio][i][saldo_final] = suma
 				data_totales['Totales']['Totales'][saldo_final] += suma
 
 

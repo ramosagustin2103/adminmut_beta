@@ -50,10 +50,15 @@ class InicialForm(FormControl, forms.Form):
 			ok_ncc = False
 		super().__init__(*args, **kwargs)
 		self.fields['punto'].queryset = PointOfSales.objects.filter(owner=consorcio.contribuyente)
-		self.fields['socio'].queryset = Socio.objects.filter(consorcio=consorcio)
+		self.fields['socio'].queryset = Socio.objects.filter(consorcio=consorcio, nombre_servicio_mutual__isnull=True )
+		self.fields.pop('condonacion')
 		if ok_ncc:
 			self.fields.pop('fecha_operacion')
-			self.fields.pop('condonacion')
+			
+
+
+
+
 
 class CobroForm(FormControl, forms.Form):
 
@@ -67,6 +72,7 @@ CobroFormSet = formset_factory(
 		form=CobroForm,
 		extra=200
 	)
+
 
 class SaldoForm(FormControl, forms.Form):
 
