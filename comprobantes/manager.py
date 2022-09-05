@@ -335,6 +335,7 @@ class ComprobanteCreator:
 				expiration_date=date.today(),
 				currency=CurrencyType.objects.get(code="PES"),
 				)
+
 		else:
 			# Por realizacion de Recibo X
 			nota_credito = self.hacer_nota_credito()
@@ -347,15 +348,15 @@ class ComprobanteCreator:
 			related_receipt = factura.receipt
 			nota_credito.related_receipts.add(related_receipt)
 			if not masivo:
-				#if nota credito c
-				validacion = None #establecemos validacion = none durante el desarrollo por error de afip, que solo valida nc en produccion
-				print("validado!!")
+				if self.tipo == "Nota de Credito C":
+					validacion = None #establecemos validacion = none durante el desarrollo por error de afip, que solo valida nc en produccion
+					print("validado!!")
 				#validacion = comprobante.validar_receipt(nota_credito)
-				#if nota credito no fiscal
-				validacion=None
+				if self.tipo == "Nota de Credito NF":
+					validacion=None
 				if validacion:
 					return validacion
-			comprobante.nota_credito = nota_credito
+			comprobante.nota_credito = nota_credito	
 		# Fin de la realizacion de la nota de credito
 
 		# Realizacion de la nota de debito por intereses
