@@ -533,3 +533,5 @@ class Acreedor(models.Model):
 	def __str__(self):
 		return self.nombre
 
+class Socio5():
+	pass
