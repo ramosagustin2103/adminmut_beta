@@ -41,7 +41,7 @@
               {% if a_generar_exp %}
                 <p class="font-secondary text-muted">
                   Debes generar recibos para {{a_generar_exp}} cobros <br>
-                  <a href="{% url 'nuevo-rcxexp' %}" class="btn m-t-10 btn-default btn-bordered">Generación Individual</a>
+                  {% comment %} <a href="{% url 'nuevo-rcxexp' %}" class="btn m-t-10 btn-default btn-bordered">Generación Individual</a> {% endcomment %}
                   <a href="{% url 'nuevo-rcxexp-masivo' %}" class="btn m-t-10 btn-default btn-bordered">Generación Masiva</a>
                 </p>
               {% endif %}              

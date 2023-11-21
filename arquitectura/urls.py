@@ -12,5 +12,6 @@ urlpatterns = [
 	path('<str:modelo>/<int:pk>/editar/', Instancia.as_view(), name='instancia'),
 	path('<str:modelo>/<int:pk>/finalizar/', Finalizar.as_view(), name='finalizar-parametro'),
 	path('<str:modelo>/<int:pk>/reactivar/', Reactivar.as_view(), name='reactivar-parametro'),
+	path('<str:modelo>/importacion/', SociosImportacionWizard.as_view(), name='importacion'),
 
 ]

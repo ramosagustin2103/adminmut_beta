@@ -128,6 +128,8 @@ class Comprobante(models.Model):
 	def tipo(self):
 		if self.receipt:
 			tipo = self.receipt.receipt_type
+		elif self.nota_credito:
+			tipo = self.nota_credito.receipt_type.description
 		elif self.punto:
 			tipo = "Recibo X"
 		else:
@@ -380,13 +382,14 @@ class Comprobante(models.Model):
 			Si es "11" (Factura C) valida la factura y hace el PDF
 			o le agrega el error de AFIP en observacion
 		"""
-		if receipt.receipt_type.code in ["102", "103"]:
+		if receipt.receipt_type.code in ["102", "103", "105"]:
 			if not receipt.receipt_number:
 				last = Receipt.objects.filter(
 					receipt_type=receipt.receipt_type,
 					point_of_sales=receipt.point_of_sales,
 				).aggregate(Max('receipt_number'))['receipt_number__max'] or 0
 				receipt.receipt_number = last + 1
+				print("aiuda")
 				receipt.save()	
 		else:
 			validacion = receipt.validate()

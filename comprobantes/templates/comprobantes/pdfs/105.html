@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Nota de Credito No Fiscal {{comprobante.formatoAfipNCC}}</title>
+    <title>Nota de Credito RG 1415 {{comprobante.formatoAfipNCC}}</title>
     <link href="{% static 'anopa/pdf.css' %}" rel="stylesheet" type="text/css" />
   </head>
   <body>
@@ -22,14 +22,14 @@
             {{ comprobante.consorcio.provincia }}
           </address>
 
-          <div class="receipt-type">
-            <div class="identifier">
+          {% comment %} <div class="receipt-type"> {% endcomment %}
+            {% comment %} <div class="identifier">
               {{ comprobante.notaCredito.receipt_type.description|slice:"-1:" }}
-            </div>
-            <div class="code">
+            </div> {% endcomment %}
+            {% comment %} <div class="code">
               Código {{ comprobante.notaCredito.receipt_type.code }}
-            </div>
-          </div>
+            </div> {% endcomment %}
+          {% comment %} </div> {% endcomment %}
 
           <div class="receipt-details">
             <div class="receipt-type-description">

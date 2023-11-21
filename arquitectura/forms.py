@@ -10,6 +10,9 @@ from admincu.forms import FormControl
 
 from django.db.models import Max
 
+from admincu.forms import *
+import re
+
 
 class ingresoForm(FormControl, forms.ModelForm):
 	class Meta:
@@ -129,26 +132,40 @@ class socioForm(FormControl, forms.ModelForm):
 		model = Socio
 		fields = [
 			'nombre', 'apellido','numero_asociado','tipo_asociado',
-			'fecha_alta',  'tipo_documento',
+			'fecha_alta',  'tipo_persona',
 			'numero_documento','fecha_nacimiento',	
-			'es_extranjero', 'domicilio', 'localidad',
-			'provincia', 'telefono','profesion', 
-			'mail',   'notificaciones'
+			'es_extranjero', 'provincia','localidad','domicilio', 
+			'numero_calle','piso','departamento','codigo_postal',
+			'telefono','profesion', 
+			'mail',   'notificaciones', 'causa_baja',
+			'medida_disciplinaria', 'observacion', 'directivo', 'estado' 
 			]
 		labels = {
-			'numero_asociado' : "Numero de asociado",
+			'nombre': "Nombre (obligatorio)",
+			'apellido':"Apellido (obligatorio)",
+			'provincia':"Provincia (obligatorio)",
+			'localidad':"Localidad (obligatorio)",
+			'numero_asociado' : "Numero de asociado (obligatorio)",
 			'fecha_nacimiento': "Fecha de nacimiento",
 			'es_extranjero': 'Es extranjero?',
-			'tipo_documento': 'Tipo de Documento',
-			'numero_documento': 'Numero de Documento',
-			'tipo_asociado':'Tipo de asociado',
-			'fecha_alta': 'Fecha de alta',
-			'notificaciones': 'Recibe notificaciones?'
+			'tipo_asociado':'Tipo de asociado (obligatorio)',
+			'fecha_alta': 'Fecha de alta (obligatorio)',
+			'notificaciones': 'Recibe notificaciones?',
+			'tipo_persona': 'Tipo de persona (obligatorio)',
+			'numero_documento': 'Cuit/Cuil del asociado (obligatorio)',
+			'numero_calle': 'Numero de calle',
+			'codigo_postal': 'Codigo postal (obligatorio)',
+			'causa_baja': 'Causa de la baja',
+			'medida_disciplinaria': 'Medida disciplinaria',
+			'domicilio': 'Calle (obligatorio)',
+			'directivo': '¿Es Directivo o Junta Fiscalizadora?',
+			'estado':'Estado del socio'			
 		}
 		widgets = {
 			'notificaciones': NullBooleanSelect(),
 			'es_extranjero': NullBooleanSelect(),
 			'numero_documento': TextInput(attrs={'type': 'number', 'min': '0', 'step':'1', 'required':True}),
+			'numero_asociado': TextInput(attrs={'type': 'number', 'min': '0', 'step':'1', 'required':True}),
 
 		}
 
@@ -156,14 +173,24 @@ class socioForm(FormControl, forms.ModelForm):
 	def __init__(self, consorcio=None, *args, **kwargs):
 		self.consorcio = consorcio
 		super().__init__(*args, **kwargs)
-		self.fields['numero_asociado'].initial = Socio.objects.aggregate(Max('numero_asociado'))['numero_asociado__max']+1
+		self.fields['numero_asociado'].required = True
 		self.fields['tipo_asociado'].queryset = Tipo_asociado.objects.filter(consorcio=consorcio, baja__isnull=True)
-		self.fields['tipo_documento'].required = True
-		self.fields['numero_documento'].required = True
 		self.fields['fecha_alta'].required = True
 		self.fields['tipo_asociado'].required = True
 		self.fields['numero_asociado'].required = True
 		self.fields['nombre'].required = True
+		self.fields['numero_documento'].required = True
+		self.fields['tipo_persona'].required = True
+		self.fields['codigo_postal'].required = True
+		self.fields['provincia'].required = True
+		self.fields['localidad'].required = True
+		self.fields['domicilio'].required = True
+		self.fields['apellido'].required = True
+		if self.consorcio and self.consorcio.cuit_nasociado:
+			self.fields['numero_asociado'].widget = forms.HiddenInput()
+			self.fields['numero_asociado'].required = False
+
+	
 
 
 	def clean_numero_asociado(self):
@@ -182,13 +209,34 @@ class socioForm(FormControl, forms.ModelForm):
 		numero_documento = self.cleaned_data['numero_documento']
 		socios_del_club = Socio.objects.filter(consorcio=self.consorcio)
 		if self.instance:
-   			socios_del_club = socios_del_club.exclude(pk=self.instance.pk)
+			socios_del_club = socios_del_club.exclude(pk=self.instance.pk)
 		documentos = []
 		for s in socios_del_club:
 			documentos.append(s.numero_documento)
 		if numero_documento in documentos:
-			raise forms.ValidationError("ya existe un asociado con el numero de documento indicado")
+			raise forms.ValidationError("ya existe un asociado con el cuit indicado")
+		if not re.match(r'^\d{11}$', numero_documento):
+			print(numero_documento)
+			raise forms.ValidationError("El CUIT debe tener exactamente 11 dígitos")
+
 		return numero_documento
+
+
+
+
+
+
+#	def clean_numero_documento(self):
+#		numero_documento = self.cleaned_data['numero_documento']
+#		socios_del_club = Socio.objects.filter(consorcio=self.consorcio)
+#		if self.instance:
+#  			socios_del_club = socios_del_club.exclude(pk=self.instance.pk)
+#		documentos = []
+#		for s in socios_del_club:
+#			documentos.append(s.numero_documento)
+#		if numero_documento in documentos:
+#			raise forms.ValidationError("ya existe un asociado con el numero de documento indicado")
+#		return numero_documento
 
 			
 
@@ -325,7 +373,8 @@ class bonificacionForm(FormControl, forms.ModelForm):
 class grupoForm(FormControl, forms.ModelForm):
 	class Meta:
 		model = Tipo_asociado
-		fields = ['nombre', 'descripcion']
+		fields = ['nombre', 'descripcion', 'cuota_social']
+		labels = {'nombre':"Nombre", 'descripcion':"Descripcion", 'cuota_social': "¿Esta categoría de asociados paga cuota social?"}
 
 	def __init__(self, consorcio=None, *args, **kwargs):
 		self.consorcio = consorcio
@@ -338,19 +387,19 @@ class grupoForm(FormControl, forms.ModelForm):
 
 class servicioForm(FormControl, forms.ModelForm):
 	class Meta:
-		model = Socio
-		fields = ['nombre_servicio_mutual','nombre', 'descripcion' ]
+		model = Servicio_mutual
+		fields = ['nombre','descripcion', 'nombre_reglamento', 'fecha_reglamento' ]
 		labels = {
-			'nombre':"Nombre del grupo de asociados que reciben el servicio",
-			'descripcion': "Descripcion del servicio",
-			'nombre_servicio_mutual': "Nombre del servicio mutual",
+			'nombre':"Nombre del servicio mutual",
+			'descripcion': "Reglamento",
+			'nombre_reglamento': "Nombre del reglamento",
+			'fecha_reglamento': "fecha de la aprobacion del reglamento",			
 		}
 
 	def __init__(self, consorcio=None, *args, **kwargs):
 		self.consorcio = consorcio
 		super().__init__(*args, **kwargs)
 
-		self.fields['nombre_servicio_mutual'].required = True
 		self.fields['nombre'].required = True
 
 class hiddenForm(forms.ModelForm):
@@ -363,4 +412,23 @@ class hiddenForm(forms.ModelForm):
 			'finalizacion': HiddenInput(),
 		}
 
+# IMPORTACION_CHOICES = (
+# 	(None, '-- Seleccionar Tipo de Importacion --'),
+# 	('parcial', 'importacion parcial')
+# )
 
+# class Tipo_ImportacionForm(FormControl, forms.Form):
+# 	tipo = forms.ChoiceField(choices=IMPORTACION_CHOICES)
+
+
+class ImportacionForm(forms.Form):
+
+	""" Importacion de un archivo """
+
+	archivo = ExcelFileField()
+
+class ConfirmacionForm(FormControl, forms.Form):
+
+	""" Confirmacion del comprobante """
+
+	confirmacion = forms.IntegerField(widget=forms.HiddenInput(), required=False)

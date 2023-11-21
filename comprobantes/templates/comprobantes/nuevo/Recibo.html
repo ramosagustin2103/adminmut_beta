@@ -77,10 +77,12 @@
               <div class="col-md-3">
                 {% if wizard.steps.prev %}
                   {% if masivo %}
-                    <a href="{% url 'nuevo-rcxexp-masivo' %}?reset" class="btn btn-bordered btn-default btn-block">Resetear</a>
-                  {% else %}
+                    <a href="{% url 'cobranzas' %}?reset" class="btn btn-bordered btn-default btn-block">Resetear</a>
+                    {% elif es_importacion_de_socios %}
+                    <a href="{% url 'parametros' %}Socio" class="btn btn-bordered btn-default btn-block">Resetear</a>
+                    {% else %}
                   <!-- NO HAY RESET PARA EL NUEVO-RCXEXP -->
-                    <a href="{% url 'nuevo-rcx' %}?reset" class="btn btn-bordered btn-default btn-block">Resetear</a>
+                    <a href="{% url 'cobranzas' %}?reset" class="btn btn-bordered btn-default btn-block">Resetear</a>
                   {% endif %}
                 {% endif %}
               </div>

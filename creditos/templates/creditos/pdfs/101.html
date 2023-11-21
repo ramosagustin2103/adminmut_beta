@@ -24,7 +24,7 @@
 
           <div class="receipt-details">
             <div class="receipt-type-description">
-              TICKET NO FISCAL
+              COMPROBANTE RG-1415
             </div>
             <strong>Nº</strong> {{ factura.formatoAfip }}<br>
             {{ factura.receipt.issued_date|date:"d/m/Y" }}<br>
@@ -43,8 +43,8 @@
           <div class="client-data">
             <strong>{% if factura.consorcio.id == 10 %}CLIENTE:{% else %}ASOCIADO:{% endif %}</strong>
             {{ factura.socio }} <br>
-            <strong>{{ factura.socio.tipo_documento }}:</strong>
-            {{ factura.socio.numero_documento }} <br>
+            <strong>CUIT:</strong>
+            {{ factura.socio.cuit }} <br>
             <strong>N° DE ASOCIADO:</strong>
             {{ factura.socio.numero_asociado }} <br>
           </div>

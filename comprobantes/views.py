@@ -115,7 +115,7 @@ class WizardComprobanteManager:
 	def obtener_creditos(self, socio, tipo):
 
 		""" Obtiene los creditos a cobrar de un socio """
-		if tipo == "Recibo X exp masivo":
+		if tipo == "Recibo X masivo":
 			dominios = socio.socio.all()
 			if dominios:
 				creditos = Credito.objects.filter(
@@ -147,7 +147,7 @@ class WizardComprobanteManager:
 					fin__isnull=True,
 					factura__receipt__receipt_type__code = 11
 					).order_by('periodo', 'fecha')
-		elif tipo == "Nota de Credito NF":
+		elif tipo == "Nota de Credito RG 1415":
 			creditos = Credito.objects.filter(
 					socio=socio,
 					liquidacion__estado="confirmado",
@@ -172,7 +172,7 @@ class WizardComprobanteManager:
 				creditos = creditos.exclude(id__in=excluir)
 
 			for c in creditos:
-				if tipo in ["Nota de Credito C", "Nota de Credito NF"] and c.int_desc() < 0:
+				if tipo in ["Nota de Credito C", "Nota de Credito RG 1415"] and c.int_desc() < 0:
 					c.neto = c.bruto
 				else:
 					c.neto = c.subtotal(fecha_operacion=fecha_operacion, condonacion=condonacion)
@@ -197,13 +197,13 @@ class WizardComprobanteManager:
 		data_inicial = self.get_cleaned_data_for_step('inicial')
 		if data_inicial:
 			data_inicial['tipo'] = tipo
-			if tipo in ["Nota de Credito C", "Nota de Credito NF"]:
+			if tipo in ["Nota de Credito C", "Nota de Credito RG 1415"]:
 				data_inicial['fecha_operacion'] = None
 				data_inicial['condonacion'] = False
 			if tipo == "Recibo X exp":
 				data_inicial['fecha_operacion'] = data_inicial['cobroexp'].fecha_cobro
 				data_inicial['condonacion'] = False
-			if tipo == "Recibo X exp masivo":
+			if tipo == "Recibo X masivo":
 				data_inicial['fecha_operacion'] = None
 				data_inicial['condonacion'] = False
 		return data_inicial
@@ -705,7 +705,7 @@ class RCXEXPWizard(WizardComprobanteManager, SessionWizardView):
 					'referencia':'',
 					'caja' : Caja.objects.get(consorcio=consorcio(self.request), nombre='Expensas Pagas')
 			}]
-			descripcion = "Cobrado Por Expensas Pagas - Canal de Pago: {} - Fecha: {}".format(cobroexp.canal_de_pago, cobroexp.fecha_cobro)
+			descripcion = "Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Caja.objects.get(id=int(cobroexp.canal_de_pago)).nombre, cobroexp.fecha_cobro)
 			data_inicial['condonacion'] = False
 			total = cobroexp.importe_cobrado
 			suma = self.calcular_total(cobros=cobros)
@@ -760,7 +760,7 @@ class RCXEXPWizard(WizardComprobanteManager, SessionWizardView):
 		}]
 		data_inicial['socio'] = Socio.objects.get(id=cobroexp.unidad_funcional)
 		data_inicial['condonacion'] = False
-		descripcion = "Cobrado Por Expensas Pagas - Canal de Pago: {} - Fecha: {}".format(cobroexp.canal_de_pago, cobroexp.fecha_cobro)
+		descripcion = "Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Caja.objects.get(id=int(cobroexp.canal_de_pago)).nombre, cobroexp.fecha_cobro)
 		suma = self.calcular_total(cobros=cobros)
 		total = self.calcular_total(cajas=cajas)
 		documento = ComprobanteCreator(
@@ -888,7 +888,7 @@ class NCNFWizard(WizardComprobanteManager, SessionWizardView):
 
 	def get_context_data(self, form, **kwargs):
 		context = super().get_context_data(form=form, **kwargs)
-		tipo = "Nota de Credito NF"
+		tipo = "Nota de Credito RG 1415"
 		extension = 'comprobantes/nuevo/13.html'
 		data_inicial = self.hacer_inicial(tipo)
 		if data_inicial:
@@ -930,7 +930,7 @@ class NCNFWizard(WizardComprobanteManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		tipo = "Nota de Credito NF"
+		tipo = "Nota de Credito RG 1415"
 		documento = ComprobanteCreator(
 			data_inicial=self.hacer_inicial(tipo),
 			data_descripcion=self.hacer_descripcion(tipo),
@@ -1062,16 +1062,18 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 	# Esto es lo que tengo que modificar para el segundo paso: revisión de la imputación de los créditos.
 	def get_context_data(self, form, **kwargs):
 		context = super().get_context_data(form=form, **kwargs)
-		tipo = "Recibo X exp masivo"
+		tipo = "Recibo X masivo"
 		extension = 'comprobantes/nuevo/Recibo.html'
 		data_inicial = self.hacer_inicial(tipo)
 		seleccion_multiple = True
 		if data_inicial:
-			caja = Caja.objects.get(consorcio=consorcio(self.request), nombre="Expensas Pagas")
+			
 			if self.steps.current == 'confirmacion':
 				documentos = []
 				creditos_predocumentados = []
 				for cobro in data_inicial['cobroexp']:
+					caja = Caja.objects.get(consorcio=consorcio(self.request), id = int(cobro.canal_de_pago))
+
 					socio = Socio.objects.get(id=cobro.unidad_funcional)
 					data_inicial['socio'] = socio
 					fecha_operacion = cobro.fecha_cobro
@@ -1097,7 +1099,7 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 						'referencia':'',
 						'caja' : caja
 					}]
-					descripcion = "Cobrado Por Expensas Pagas - Canal de Pago: {} - Fecha: {}".format(cobro.canal_de_pago, cobro.fecha_cobro)
+					descripcion = "Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Caja.objects.get(id=int(cobro.canal_de_pago)).nombre, cobro.fecha_cobro)
 					data_inicial['tipo'] = "Recibo X exp"
 					documento = ComprobanteCreator(
 						data_inicial=data_inicial,
@@ -1126,13 +1128,16 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 
 	@transaction.atomic
 	def done(self, form_list, **kwargs):
-		tipo = "Recibo X exp masivo"
+		tipo = "Recibo X masivo"
 		#cobros = self.hacer_cobros()
 		data_inicial = self.hacer_inicial(tipo)
 		if data_inicial:
-			caja = Caja.objects.get(consorcio=consorcio(self.request), nombre="Expensas Pagas")
+			
 			creditos_predocumentados = []
 			for cobro in data_inicial['cobroexp']:
+			
+				caja = Caja.objects.get(consorcio=consorcio(self.request), id = int(cobro.canal_de_pago))
+
 				socio = Socio.objects.get(id=cobro.unidad_funcional)
 				data_inicial['socio'] = socio
 				fecha_operacion = cobro.fecha_cobro
@@ -1157,7 +1162,7 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 					'referencia':'',
 					'caja' : caja
 				}]
-				descripcion = "Cobrado Por Expensas Pagas - Canal de Pago: {} - Fecha: {}".format(cobro.canal_de_pago, cobro.fecha_cobro)
+				descripcion = "Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Caja.objects.get(id=int(cobro.canal_de_pago)).nombre, cobro.fecha_cobro)
 				data_inicial['tipo'] = "Recibo X exp"
 				documento = ComprobanteCreator(
 					data_inicial=data_inicial,
@@ -1215,8 +1220,9 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 		socios = {}
 		for s in data_socios:
 			if not s in socios.keys():
+				print(s)
 				try:
-					socios[s] = Socio.objects.get(consorcio=consorcio(self.request), numero_asociado=s)
+					socios[s] = Socio.objects.get(consorcio=consorcio(self.request), cuit=str(int(s)))
 				except:
 					pass
 

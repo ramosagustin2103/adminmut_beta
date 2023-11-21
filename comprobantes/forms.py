@@ -206,7 +206,7 @@ class EXPMForm(FormControl, forms.Form):
 	""" Paso 1 de Recibo C a traves de un pago por MP """
 
 	punto = forms.ModelChoiceField(queryset=PointOfSales.objects.none(), empty_label="-- Seleccionar Punto de gestion --", label="Punto de gestion")
-	cobroexp = forms.ModelMultipleChoiceField(queryset=CobroExp.objects.none(), label="Seleccionar Cobros de Expensas Pagas. Use ctrl para selección multiple")
+	cobroexp = forms.ModelMultipleChoiceField(queryset=CobroExp.objects.none(), label="Seleccionar Cobros. Use ctrl para selección multiple")
 
 	def __init__(self, *args, **kwargs):
 		consorcio = kwargs.pop('consorcio')

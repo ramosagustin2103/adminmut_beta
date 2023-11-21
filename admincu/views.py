@@ -60,22 +60,10 @@ def home(request):
 	elif request.user.groups.all()[0].name == "socio":
 		socio = request.user.socio_set.first()
 		if socio:
-			comprobantes = Comprobante.objects.filter(
-					socio=socio
-				).order_by('-id')[:5]
-			creditos = Credito.objects.filter(
-				liquidacion__estado="confirmado",
-				socio=socio,
-				fin__isnull=True
-			)
+			print('hola')
+			return HttpResponseRedirect('parametros')
 	else:
-		ops = OP.objects.filter(
-				consorcio=consorcio(request),
-				confirmado=True,
-				).order_by('-id')[:5]
-		comprobantes = Comprobante.objects.filter(
-				consorcio=consorcio(request),
-			).order_by('-id')[:5]
+		return HttpResponseRedirect('parametros')
 
 	if request.user.groups.all()[0].name in ["socio", "superusuario"]:
 		template = request.user.groups.all()[0].name

@@ -33,7 +33,7 @@ class ComprobanteCreator:
 		self.data_nuevo_saldo = data_nuevo_saldo
 		self.data_mp = data_mp
 		self.receipt_type_nd = ReceiptType.objects.get(code="12") if not self.consorcio.superficie else ReceiptType.objects.get(code="102") 
-		self.receipt_type_nc = ReceiptType.objects.get(code="13") if not self.tipo == "Nota de Credito NF" else ReceiptType.objects.get(code="105") 
+		self.receipt_type_nc = ReceiptType.objects.get(code="13") if not self.tipo == "Nota de Credito RG 1415" else ReceiptType.objects.get(code="105") 
 
 
 	def hacer_cobros_y_creditos(self):
@@ -303,7 +303,8 @@ class ComprobanteCreator:
 	@transaction.atomic
 	def guardar(self, masivo=False):
 		# Realizacion del comprobante
-		if self.tipo == "Recibo X" or self.tipo == "Recibo X exp" or self.tipo == "Recibo X exp masivo":
+		print(self.tipo)
+		if self.tipo == "Recibo X" or self.tipo == "Recibo X exp" or self.tipo == "Recibo X masivo" :
 			punto = self.punto
 		else:
 			punto = None
@@ -317,7 +318,7 @@ class ComprobanteCreator:
 			total=total,
 		)
 		# Realizacion de la nota de credito
-		if self.tipo == "Nota de Credito C":
+		if self.tipo in ["Nota de Credito C", "Nota de Credito RG 1415"]:
 			# Por realizacion manual de la nota de credito
 			nota_credito = Receipt(
 				point_of_sales=self.punto,
@@ -336,6 +337,7 @@ class ComprobanteCreator:
 				currency=CurrencyType.objects.get(code="PES"),
 				)
 
+
 		else:
 			# Por realizacion de Recibo X
 			nota_credito = self.hacer_nota_credito()
@@ -352,8 +354,8 @@ class ComprobanteCreator:
 					validacion = None #establecemos validacion = none durante el desarrollo por error de afip, que solo valida nc en produccion
 					print("validado!!")
 				#validacion = comprobante.validar_receipt(nota_credito)
-				if self.tipo == "Nota de Credito NF":
-					validacion=None
+				if self.tipo == "Nota de Credito RG 1415":
+					validacion = comprobante.validar_receipt(nota_credito)
 				if validacion:
 					return validacion
 			comprobante.nota_credito = nota_credito	

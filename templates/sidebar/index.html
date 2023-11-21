@@ -1,6 +1,5 @@
-<li class="has-submenu">
-  <a href="{% url 'home' %}"><i class="fi-air-play"></i>Home</a>
-</li>
+
+  {% include 'sidebar/parametros.html' %}
 
 {% if user.groups.all.0.name == "superusuario" %}
 
@@ -15,13 +14,15 @@
 	{% include 'sidebar/contable.html' %}
   {% include 'sidebar/reportes.html' %}
   {% include 'sidebar/herramientas.html' %}
-	{% include 'sidebar/parametros.html' %}
 
 {% else %}
 
   {% include 'sidebar/basico.html' %}
   {% include 'sidebar/reportes.html' %}
   {% include 'sidebar/herramientas.html' %}
-  {% include 'sidebar/parametros.html' %}
+  {% if consorcio.proveeduria %}
+    {% include 'sidebar/proveeduria.html' %}
+  {% endif %}
+ 
 
 {% endif %}

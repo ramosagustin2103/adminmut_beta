@@ -32,7 +32,6 @@
             <div class="receipt-type-description">
               Recibo X{% if comprobante.anulado %} <strong style="color: #FF0000;" >| ANULADO |</strong>{% endif %}
             </div>
-            <small>Documento no valido como factura</small><br>
             <strong>Nº</strong> {{ comprobante.formatoAfipRCX }} <br>
             {{ comprobante.fecha|date:"d/m/Y" }}<br>
             <small>
@@ -50,8 +49,8 @@
           <div class="client-data">
             <strong>SOCIO:</strong>
             {{ comprobante.socio }} <br>
-            <strong>{{ comprobante.socio.tipo_documento }}:</strong>
-            {{ comprobante.socio.numero_documento }} <br>
+            <strong>CUIT:</strong>
+            {{ comprobante.socio.cuit }} <br>
           </div>
         </div>
 

@@ -82,6 +82,35 @@ def hacer_asiento_diario(modeladmin, request, queryset):
 			comprobantes_dia = Comprobante.objects.filter(consorcio=consorcio, fecha=dia)
 			messages.success(request, 'Asiento CREADO con exito.')
 
+
+def procesar_recibos_masivos(modeladmin, request, queryset):
+	for comprobante in queryset:
+		error = None
+		if comprobante.nota_credito:
+			validacion_nc = comprobante.validar_receipt(comprobante.nota_credito)
+			if validacion_nc:
+				error = validacion_nc
+		if comprobante.nota_debito:
+			validacion_nd = comprobante.validar_receipt(comprobante.nota_debito)
+			if validacion_nd:
+				error = validacion_nd
+		
+		print(error)
+		
+		if not error:
+			try:
+				comprobante.hacer_pdfs()
+				comprobante.enviar_mail()
+			except:
+				pass
+			messages.success(request, 'recibo validado')
+
+
+
+
+
+
+
 '''
 	else:
 		comprobante = queryset.first()
@@ -109,6 +138,7 @@ def hacer_asiento_diario(modeladmin, request, queryset):
 
 
 hacer_asiento_diario.short_description = "Hacer asiento diario"
+procesar_recibos_masivos.short_description = "Procesar recibo masivo"
 
 
 class CobroInline(admin.TabularInline):
@@ -135,7 +165,9 @@ class ComprobanteAdmin(admin.ModelAdmin):
 	actions = [
 		reenviar_mail,
 		hacer_asiento_diario,
-		buscar_caja_pdf
+		buscar_caja_pdf,
+		procesar_recibos_masivos
+
 	]
 	inlines = [
 		CobroInline,

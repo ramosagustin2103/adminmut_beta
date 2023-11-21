@@ -559,7 +559,7 @@ class CindividualesWizard(WizardLiquidacionManager, SessionWizardView):
 	def get_context_data(self, form, **kwargs):
 		context = super().get_context_data(form=form, **kwargs)
 		tipo = "Individuales"
-		peticion ="liquidacion de comprobantes no fiscales"
+		peticion ="liquidacion de comprobantes RG-1415"
 		if self.steps.current == 'plazos':
 			data_individuales = self.get_cleaned_data_for_step('individuales')
 			ingresos = set([data['ingreso'] for data in data_individuales if data])
@@ -640,7 +640,7 @@ class CmasivoWizard(WizardLiquidacionManager, SessionWizardView):
 		context = super().get_context_data(form=form, **kwargs)
 		tipo = "Masivo"
 		data_masivo = self.get_cleaned_data_for_step('masivo')
-		peticion = "liquidacion de comprobantes no fiscales"
+		peticion = "liquidacion de comprobantes RG-1415"
 		if data_masivo:
 			ingresos = set([data['ingreso'] for data in data_masivo if data])
 			accesorios = self.obtener_accesorios(ingresos)
@@ -701,7 +701,7 @@ class CgruposWizard(WizardLiquidacionManager, SessionWizardView):
 	def get_context_data(self, form, **kwargs):
 		context = super().get_context_data(form=form, **kwargs)
 		tipo = "Por Grupos"
-		peticion = "liquidacion de comprobantes no fiscales"		
+		peticion = "liquidacion de comprobantes RG-1415"		
 		data_grupo = self.get_cleaned_data_for_step('grupo')
 		if data_grupo:
 			ingresos = set([data['ingreso'] for data in data_grupo if data])

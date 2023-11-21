@@ -115,7 +115,7 @@
         <th>Apellido</th>
         <th>Numero</th>
         <th>Categoria</th>  
-        <th>Documento</th>
+        <th>Cuit</th>
         <th>Domicilio</th>
         <th>Localidad</th>
         <th>Provincia</th>
@@ -125,6 +125,7 @@
         <th>Profesion</th>
         <th>Fecha de Ingreso</th>
         <th>Notificaciones</th>  
+        <th>Estado</th>          
       </tr>
     </thead>
     <tbody>
@@ -162,9 +163,7 @@
         </td>
         <td>{{objeto.tipo_asociado|default:""}}</td>        
         <td>
-          {% if objeto.tipo_documento and objeto.numero_documento %}
-            {{objeto.tipo_documento}}: {{objeto.numero_documento}}
-          {% endif %}
+          {{objeto.cuit|default:""}}     
         </td>
         <td>{% if objeto.domicilio %}{{objeto.domicilio}}{% endif %}</td>
         <td>{{objeto.localidad|default:""}}</td>
@@ -181,6 +180,7 @@
         {% else %}
         <td>No</td>
         {% endif %}
+        <td>{{objeto.estado}}</td>        
       </tr>
     {% endfor %}
     </tbody>
@@ -258,8 +258,8 @@
         <th width="20"></th>
         <th width="20"></th>
         <th>Nombre</th>
-        <th>Grupo Asociados</th>
-        <th>Descripcion</th>
+        <th>Nombre del reglamento</th>
+        <th>Fecha del reglamento</th>
       </tr>
     </thead>
     <tbody>
@@ -283,9 +283,9 @@
           </a>
           {% endif %}
         </td>
-        <td>{{objeto.nombre_servicio_mutual|default:" " }}</td>
-        <td>{{objeto.nombre|default:""}}</td>
-        <td>{{objeto.descripcion|default:" " }}</td>        
+        <td>{{objeto.nombre|default:" " }}</td>
+        <td>{{objeto.nombre_reglamento|default:" " }}</td>
+        <td>{{objeto.fecha_reglamento|default:" " }}</td>        
       </tr>
     {% endfor %}
     </tbody>

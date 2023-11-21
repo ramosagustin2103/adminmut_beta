@@ -38,6 +38,9 @@ class Consorcio(models.Model):
 	mails = models.BooleanField(default=False)
 	dominioweb = models.CharField(max_length=70, blank=True, null=True)
 	costo_mp = models.BooleanField(default=False) # Si es True el club se hace cargo
+	cuit_nasociado = models.BooleanField(default=False)
+	proveeduria = models.BooleanField(default=False)
+
 
 	def __str__(self):
 		nombre = '%s' % (self.nombre)

@@ -31,6 +31,7 @@ class Tipo_asociado(models.Model):
 	nombre = models.CharField(max_length=80)
 	baja = models.DateField(blank=True, null=True)
 	descripcion = models.TextField(blank=False, null=True)
+	cuota_social = models.BooleanField(default=True)
 
 	def __str__(self):
 		return self.nombre
@@ -245,11 +246,55 @@ class Gasto(models.Model):
 
 
 class Socio(models.Model):
-
 	""" Socios y NO SOCIOS y servicios mutuales. Quedo con el nombre de socio por intempestividad """
+	CLASE_CHOICES = (
+			('fisica', 'Fisica'),
+			('juridica', 'Juridica'),
+		)
+
+	DIRECTIVO_CHOICES = (
+			('presidente', 'Presidente'),
+			('secretario', 'Secretario'),
+			('prosecretario', 'Pro Secretario'),
+			('tesorero', 'Tesorero'),
+			('protesorero', 'Pro Tesorero'),
+			('vicepresidente', 'Vicepresidente'),
+			('primer_vocal', 'Vocal Titular Primero'),
+			('segundo_vocal', 'Vocal Titular Segundo'),
+			('tercer_vocal', 'Vocal Titular Tercero'),
+			('cuarto_vocal', 'Vocal Titular Cuarto'),
+			('primer_vocal_suplente', 'Vocal Suplente Primero'),
+			('segundo_vocal_suplente', 'Vocal Suplente Segundo'),
+			('tercer_vocal_suplente', 'Vocal Suplente Tercero'),
+			('cuarto_vocal_suplente', 'Vocal Suplente Cuarto'),
+			('Revisor_cuenta_1ro', 'Junta Fiscalizadora, Revisor de cuenta primero'),
+			('Revisor_cuenta_1ro_suplente', 'Junta Fiscalizadora, Revisor de cuenta primero suplente'),
+			('Revisor_cuenta_2do', 'Junta Fiscalizadora, Revisor de cuenta segundo'),
+			('Revisor_cuenta_2do_suplente', 'Junta Fiscalizadora, Revisor de cuenta segundo suplente'),
+			('Revisor_cuenta_3er', 'Junta Fiscalizadora, Revisor de cuenta tercero'),
+			('Revisor_cuenta_3er_suplente', 'Junta Fiscalizadora, Revisor de cuenta segundo suplente'),
+			('Titular_1ero', 'Junta Fiscalizadora, Titular Primero'),
+			('Titular_2do', 'Junta Fiscalizadora, Titular Segundo'),
+			('Titular_3ero', 'Junta Fiscalizadora, Titular Tercero'),						
+			('Titular_4to', 'Junta Fiscalizadora, Titular Cuarto'),
+			('Suplente_1ero', 'Junta Fiscalizadora, Suplente Primero'),						
+			('Suplente_2do', 'Junta Fiscalizadora, Suplente Segundo'),						
+			('Suplente_3ero', 'Junta Fiscalizadora, Suplente Tercero'),						
+			('Suplente_4to', 'Junta Fiscalizadora, Suplente Cuarto'),						
+
+	)
+
+	ESTADO_CHOICES = (
+		('vigente', 'Vigente'),
+		('baja', 'Baja'),
+		('suspendido', 'Suspendido'),
+
+
+	)
 
 	# Usuarios diferentes por mas que tenga dos clubes (No se compensan unos con otros)
 	consorcio = models.ForeignKey(Consorcio, on_delete=models.CASCADE)
+	tipo_persona = models.CharField(max_length=15, choices=CLASE_CHOICES, default='fisica')
 	# Socio o cliente
 	es_socio = models.BooleanField(default=True)
 	usuarios = models.ManyToManyField(User, blank=True)
@@ -259,26 +304,39 @@ class Socio(models.Model):
 	fecha_nacimiento = models.DateField(blank=True, null=True)
 	es_extranjero = models.BooleanField(default=False)
 	# Tipo de documento segun tabla de AFIP
+	cuit = models.CharField(max_length=13, blank=True, null=True)
 	tipo_documento = models.ForeignKey(DocumentType, blank=True, null=True, on_delete=models.CASCADE)
 	numero_documento = models.CharField(max_length=13, blank=True, null=True)
 	telefono = models.CharField(max_length=30, blank=True, null=True)
 	domicilio = models.CharField(max_length=100, blank=True, null=True)
 	localidad = models.CharField(max_length=100, blank=True, null=True)
 	provincia = models.ForeignKey(Codigo_Provincia, blank=True, null=True, on_delete=models.CASCADE)
+	numero_calle = models.PositiveIntegerField(blank=True, null=True)
+	piso = models.PositiveIntegerField(blank=True, null=True)
+	departamento = models.CharField(max_length=10, blank=True, null=True)
+	codigo_postal = models.CharField(max_length=20, blank=True, null=True)
 	# Agregados
 	profesion = models.CharField(max_length=40, blank=True, null=True)
 	baja = models.DateField(blank=True, null=True)
 	codigo = models.CharField(max_length=5, blank=True, null=True)
 	mail = models.EmailField(blank=True, null=True)
-
+	causa_baja = models.CharField(max_length=100, blank=True, null=True)
+	medida_disciplinaria = models.CharField(max_length=100, blank=True, null=True)
+	observacion = models.CharField(max_length=100, blank=True, null=True)
 
 
 	tipo_asociado = models.ForeignKey(Tipo_asociado, on_delete=models.CASCADE, related_name='socio', blank=True, null=True)
 	fecha_alta = models.DateField(blank=True, null=True)
 	notificaciones = models.BooleanField(default=False)
-	numero_asociado = models.PositiveIntegerField(default=1)
+	numero_asociado = models.CharField(max_length=13, blank=True, null=True)
 	descripcion = models.TextField(blank=True, null=True)
 	nombre_servicio_mutual = models.CharField(max_length=80, blank=True, null=True)
+	directivo = models.CharField(max_length=20, choices=DIRECTIVO_CHOICES, blank=True, null=True)
+	estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='vigente')
+
+	def save(self, *args, **kwargs):
+		self.tipo_documento = DocumentType.objects.get(id=1)
+		super(Socio, self).save(*args, **kwargs)
 
 	def __str__(self):
 		if not self.apellido:
@@ -329,8 +387,6 @@ class Socio(models.Model):
 		from creditos.models import Credito
 
 		if self.es_socio:
-			creditos = Credito.objects.filter(dominio__in=self.socio.all(), padre__isnull=True, fecha__lte=fin)
-		else:
 			creditos = Credito.objects.filter(socio=self, padre__isnull=True, fecha__lte=fin)
 
 		datos = []
@@ -535,3 +591,15 @@ class Acreedor(models.Model):
 
 class Socio5():
 	pass
+
+class Servicio_mutual(models.Model):
+	consorcio = models.ForeignKey(Consorcio, on_delete=models.CASCADE)
+	nombre = models.CharField(max_length=100)
+	descripcion = models.TextField(max_length=10000, blank=False, null=True)
+	nombre_reglamento = models.CharField(max_length=400, blank=True, null=True)
+	fecha_reglamento = models.DateField(blank=True, null=True)
+	baja = models.DateField(blank=True, null=True)
+
+
+	def __str__(self):
+		return self.nombre
