@@ -15,9 +15,11 @@
     {% for objeto in object_list %}
       <tr>
         <td class="text-center">
+          {% if not objeto.es_cuota_social %}
           <a href="{% url 'instancia' modelo=parametro pk=objeto.pk %}" id="envio" class="btn btn-icon btn-bordered btn-warning btn-xs">
             <i class="fa fa-pencil"></i>
           </a>
+          {% endif %}
         </td>
         <td>{{ forloop.counter }}</td>
         <td>{{objeto}}</td>

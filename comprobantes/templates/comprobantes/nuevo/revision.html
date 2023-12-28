@@ -28,6 +28,7 @@
                 <tr>
                   <th>Fecha</th>
                   <th>Socio</th>
+                  <th>Ingreso</th>
                   <th>Caja</th>
                   <th class="text-right">Importe</th>
                 </tr>
@@ -38,6 +39,7 @@
                   <tr>
                     <td>{{ cobro.fecha_cobro|date:"d/m/Y" }}</td>
                     <td>{{ cobro.unidad_funcional }}</td>
+                    <td>{{ cobro.ingreso }}</td>
                     <td>{{ cobro.canal_de_pago }}</td>
                     <td class="text-right">{{ cobro.importe_cobrado|intcomma }}</td>
                   </tr>

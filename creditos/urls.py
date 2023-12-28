@@ -11,6 +11,7 @@ urlpatterns = [
 
 
 	# Creaciones
+	path('nuevo/cuota_social/', CuotaSocialWizard.as_view(), name='nuevo-cuota-social'),
 	path('nuevo/individuales/', IndividualesWizard.as_view(), name='nuevo-individuales'),
 	path('nuevo/masivo/', MasivoWizard.as_view(), name='nuevo-masivo'),
 	path('nuevo/grupos/', GrupoWizard.as_view(), name='nuevo-grupo'),

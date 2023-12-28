@@ -158,6 +158,7 @@ class Ingreso(models.Model):
 	prorrateo = models.BooleanField(default=False)
 	prioritario = models.BooleanField(default=False)
 	cuenta_contable = models.ForeignKey(Cuenta, on_delete=models.CASCADE)
+	es_cuota_social = models.BooleanField(default=False)
 
 	def __str__(self):
 		return self.nombre
@@ -351,6 +352,13 @@ class Socio(models.Model):
 		else:
 			n = '{}, {}'.format(self.apellido, self.nombre)
 		return n
+
+	@property
+	def cargo(self):
+		DIRECTIVO_DICT = dict(self.DIRECTIVO_CHOICES)
+		return DIRECTIVO_DICT.get(self.directivo, None)	
+
+
 
 	def get_saldos(self, fecha=None):
 		fecha = fecha if fecha else date.today()

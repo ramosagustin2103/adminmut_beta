@@ -125,6 +125,8 @@ class CobroExp(models.Model):
 	neto_a_depositar = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
 	canal_de_pago = models.CharField(max_length=15)
 	documentado = models.DateField(blank=True, null=True)
+	ingreso = models.CharField(max_length=60, blank=True, null=True)
+
 
 
 

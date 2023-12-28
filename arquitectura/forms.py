@@ -42,6 +42,20 @@ class ingresoForm(FormControl, forms.ModelForm):
 		if self.instance.primario:
 			self.fields.pop('cuenta_contable')
 
+	def clean_nombre(self):
+		nombre = self.cleaned_data['nombre']
+		ingresos_del_club = Ingreso.objects.filter(consorcio=self.consorcio)
+		if self.instance:
+			ingresos_del_club = ingresos_del_club.exclude(pk=self.instance.pk)
+		ingresos = []
+		for s in ingresos_del_club:
+			ingresos.append(s.nombre)
+		if nombre in ingresos:
+			raise forms.ValidationError("ya existe un ingreso con el nombre indicado")
+		return nombre
+
+
+
 
 class gastoForm(FormControl, forms.ModelForm):
 	class Meta:

@@ -206,7 +206,7 @@ class MasivoForm(FormControl, forms.Form):
 
 	def __init__(self, consorcio, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio)
+		self.fields['ingreso'].queryset = Ingreso.objects.filter(consorcio=consorcio, es_cuota_social=False)
 
 
 MasivoFormSet = formset_factory(
@@ -260,3 +260,19 @@ class ImportacionForm(forms.Form):
 	""" Importacion de un archivo """
 
 	archivo = ExcelFileField()
+
+class CuotaSocialForm(FormControl, forms.Form):
+
+	""" Formulario individuales de liquidaciones """
+	categorias_asociado = forms.ModelChoiceField(queryset=Tipo_asociado.objects.none(), empty_label="-- Seleccionar categoria --", label="Categoria")
+	subtotal = forms.DecimalField(max_digits=20, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+	detalle = forms.CharField(max_length=30, required=False)
+
+
+	def __init__(self, consorcio, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.fields['categorias_asociado'].queryset = Tipo_asociado.objects.filter(consorcio=consorcio, cuota_social=True)
+
+
+
+

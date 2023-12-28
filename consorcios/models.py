@@ -40,6 +40,7 @@ class Consorcio(models.Model):
 	costo_mp = models.BooleanField(default=False) # Si es True el club se hace cargo
 	cuit_nasociado = models.BooleanField(default=False)
 	proveeduria = models.BooleanField(default=False)
+	matricula = models.CharField(max_length=50, blank=True, null=True)
 
 
 	def __str__(self):

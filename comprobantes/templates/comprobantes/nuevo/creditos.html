@@ -16,7 +16,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for credito in creditos %}
+          {% for credito in creditos %}        
             <tr>
               <td>{{ credito.ingreso }}</td>
               <td>{{ credito.periodo|date:"Y-m" }}</td>
@@ -32,5 +32,17 @@
         </tbody>
       </table>
   </div>
+
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      <ul>
+          {% for field_errors in form.errors %}
+          {% if field_errors %}
+                  <li>{{ field_errors }}</li>
+          {% endif %}              
+          {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 
 {% endblock %}

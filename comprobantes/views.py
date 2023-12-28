@@ -112,7 +112,7 @@ class WizardComprobanteManager:
 		"confirmacion": "comprobantes/nuevo/confirmacion.html",
 		"revision": "comprobantes/nuevo/revision.html",
 	}
-	def obtener_creditos(self, socio, tipo):
+	def obtener_creditos(self, socio, tipo, ingreso=None):
 
 		""" Obtiene los creditos a cobrar de un socio """
 		if tipo == "Recibo X masivo":
@@ -126,6 +126,7 @@ class WizardComprobanteManager:
 			else:
 				creditos = Credito.objects.filter(
 						socio=socio,
+						ingreso=ingreso,
 						liquidacion__estado="confirmado",
 						dominio__isnull=True,
 						fin__isnull=True, 
@@ -1073,12 +1074,12 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 				creditos_predocumentados = []
 				for cobro in data_inicial['cobroexp']:
 					caja = Caja.objects.get(consorcio=consorcio(self.request), id = int(cobro.canal_de_pago))
-
 					socio = Socio.objects.get(id=cobro.unidad_funcional)
+					ingreso =  Ingreso.objects.get(consorcio=consorcio(self.request), nombre=cobro.ingreso)
 					data_inicial['socio'] = socio
 					fecha_operacion = cobro.fecha_cobro
 					data_inicial['fecha_operacion'] = fecha_operacion
-					creditos = self.obtener_creditos(socio,tipo)
+					creditos = self.obtener_creditos(socio,tipo,ingreso)
 					cobros = []
 					remanente = cobro.importe_cobrado
 					for c in creditos:
@@ -1099,7 +1100,7 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 						'referencia':'',
 						'caja' : caja
 					}]
-					descripcion = "Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Caja.objects.get(id=int(cobro.canal_de_pago)).nombre, cobro.fecha_cobro)
+					descripcion = "{} - Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Ingreso.objects.get(consorcio=consorcio(self.request), nombre=cobro.ingreso), Caja.objects.get(id=int(cobro.canal_de_pago)).nombre, cobro.fecha_cobro)
 					data_inicial['tipo'] = "Recibo X exp"
 					documento = ComprobanteCreator(
 						data_inicial=data_inicial,
@@ -1137,12 +1138,12 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 			for cobro in data_inicial['cobroexp']:
 			
 				caja = Caja.objects.get(consorcio=consorcio(self.request), id = int(cobro.canal_de_pago))
-
 				socio = Socio.objects.get(id=cobro.unidad_funcional)
+				ingreso =  Ingreso.objects.get(consorcio=consorcio(self.request), nombre=cobro.ingreso)
 				data_inicial['socio'] = socio
 				fecha_operacion = cobro.fecha_cobro
 				data_inicial['fecha_operacion'] = fecha_operacion
-				creditos = self.obtener_creditos(socio,tipo)
+				creditos = self.obtener_creditos(socio,tipo,ingreso)
 				cobros = []
 				remanente = cobro.importe_cobrado
 				for c in creditos:
@@ -1162,7 +1163,7 @@ class RCXEXPMWizard(WizardComprobanteManager, SessionWizardView):
 					'referencia':'',
 					'caja' : caja
 				}]
-				descripcion = "Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Caja.objects.get(id=int(cobro.canal_de_pago)).nombre, cobro.fecha_cobro)
+				descripcion = "{} - Cobrado Por - Canal de Pago: {} - Fecha: {}".format(Ingreso.objects.get(consorcio=consorcio(self.request), nombre=cobro.ingreso), Caja.objects.get(id=int(cobro.canal_de_pago)).nombre, cobro.fecha_cobro)
 				data_inicial['tipo'] = "Recibo X exp"
 				documento = ComprobanteCreator(
 					data_inicial=data_inicial,
@@ -1209,7 +1210,7 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 		"""
 
 		# Validacion de columnas
-		columnas_necesarias = ['socio', 'fecha', 'importe', 'caja']
+		columnas_necesarias = ['socio', 'fecha', 'importe', 'caja', 'ingreso']
 		columnas_archivo = datos.headers
 		errores = ['Falta la columna "{}" en el archivo que deseas importar'.format(columna) for columna in columnas_necesarias if not columna in columnas_archivo]
 		if errores:
@@ -1235,9 +1236,19 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 				except:
 					pass
 
+		data_ingresos = datos['ingreso']
+		ingresos = {}
+		for i in data_ingresos:
+			if not i in ingresos.keys():
+				try:
+					ingresos[i] = Ingreso.objects.get(consorcio=consorcio(self.request), nombre=i)
+				except:
+					pass
+
 		return {
 			'socios': socios,
 			'cajas': cajas,
+			'ingresos':ingresos,
 		}
 
 
@@ -1262,7 +1273,7 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 
 		fila = 2 # Fila posterior a la de los titulos de las columnas
 		for d in datos:
-			if d['caja'] and d['socio'] and d['fecha'] and d['importe']:
+			if d['caja'] and d['socio'] and d['fecha'] and d['importe'] and d['ingreso']:
 				try:
 					caja = objetos_limpios['cajas'][d['caja']]
 					try:
@@ -1271,13 +1282,18 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 							fecha = self.convertirFecha(d['fecha'])
 							try:
 								importe = float(d['importe'])
-								cobros.append({
+								try: 
+									ingreso = objetos_limpios['ingresos'][d['ingreso']]
+									cobros.append({
 									'codigo_consorcio':consorcio(self.request).id,
 									'fecha_cobro':fecha,
 									'canal_de_pago':caja,
 									'unidad_funcional':socio,
 									'importe_cobrado':importe,
+									'ingreso':ingreso,
 								})
+								except:
+									errores.append("Linea {}: No se reconoce el ingreso".format(fila))
 							except:
 								errores.append("Linea {}: Debe escribir un numero en importe".format(fila))
 						except:
@@ -1334,7 +1350,8 @@ class CobrosImportacionWizard(WizardComprobanteManager, SessionWizardView):
 				fecha_cobro=cobro['fecha_cobro'],
 				canal_de_pago=cobro['canal_de_pago'].id,
 				unidad_funcional=cobro['unidad_funcional'].id,
-				importe_cobrado=cobro['importe_cobrado'],			
+				importe_cobrado=cobro['importe_cobrado'],
+				ingreso=cobro['ingreso']			
 			))
 		CobroExp.objects.bulk_create(cobrosexp)
 		messages.success(self.request, "Cobros guardados con exito")

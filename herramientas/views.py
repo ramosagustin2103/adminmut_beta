@@ -1,3 +1,5 @@
+from multiprocessing import context
+import re
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils.decorators import method_decorator
@@ -22,7 +24,7 @@ from .manager import *
 class Index(generic.TemplateView):
 
 	"""
-		Index de herramientas.
+			Index de herramientas.
 	"""
 
 	template_name = 'herramientas/index.html'
@@ -31,7 +33,6 @@ class Index(generic.TemplateView):
 		context = super().get_context_data(**kwargs)
 		context['resumenes'] = Resumen.objects.all().order_by('nombre')
 		return context
-
 
 
 @method_decorator(group_required('administrativo', 'contable'), name='dispatch')
@@ -44,27 +45,30 @@ class Rg3369(generic.TemplateView):
 		if fechas:
 			rango = fechas.split(" / ")
 			creditos = Credito.objects.filter(
-					consorcio=consorcio(request),
-					periodo__range=rango,
-					dominio__isnull=False
-				)
+				consorcio=consorcio(request),
+				periodo__range=rango,
+				dominio__isnull=False
+			)
 			informantes = {}
 			for c in creditos:
-				valor = informantes.setdefault(c.socio, [[], 0]) # El primer valor es la superficie y el segundo el monto
-				valor[0].append(c.dominio) if not c.dominio in valor[0] else c.socio.socio.first()
+				# El primer valor es la superficie y el segundo el monto
+				valor = informantes.setdefault(c.socio, [[], 0])
+				valor[0].append(
+					c.dominio) if not c.dominio in valor[0] else c.socio.socio.first()
 				valor[1] += c.capital
 				informantes[c.socio] = valor
-
 
 			for socio, parametros in informantes.copy().items():
 
 				# Parametros segun afip
 				afip_monto = 8000
-				afip_superficie = 100 if consorcio(request).tipo.nombre == "CONSORCIO DE EDIF DE DEPTO Y PH" else 400
+				afip_superficie = 100 if consorcio(
+					request).tipo.nombre == "CONSORCIO DE EDIF DE DEPTO Y PH" else 400
 
 				# Determinacion
 				monto = True if parametros[1] < afip_monto else False
-				superficies = True if sum([d.superficie_total or 0 for d in parametros[0]]) < afip_superficie else False
+				superficies = True if sum(
+					[d.superficie_total or 0 for d in parametros[0]]) < afip_superficie else False
 
 				if monto and superficies:
 					del informantes[socio]
@@ -101,7 +105,6 @@ class TransferenciaWizard(SessionWizardView):
 	]
 
 	def hacer_cajas(self):
-
 		"""
 		Crea lista de DICCIONARIOS de caja. No lista de objetos
 		Para poder utilizar mejor en manager.py
@@ -116,20 +119,19 @@ class TransferenciaWizard(SessionWizardView):
 						data = {
 							'caja': d['caja'],
 							'referencia': d['referencia'],
-							'subtotal': d['subtotal'] # Lo que coloca el usuario
+							# Lo que coloca el usuario
+							'subtotal': d['subtotal']
 						}
 						cajas.append(data)
 		return cajas
 
 	def calcular_total(self, **kwargs):
-
 		""" Total de transferencias """
 
 		suma = 0
 		for caja in kwargs['cajas']:
 			suma += caja['subtotal']
 		return suma
-
 
 	def get_template_names(self):
 		return [self.TEMPLATES[self.steps.current]]
@@ -157,8 +159,8 @@ class TransferenciaWizard(SessionWizardView):
 		kwargs = super().get_form_kwargs()
 		if step == "inicial":
 			kwargs.update({
-					'consorcio': consorcio(self.request)
-				})
+				'consorcio': consorcio(self.request)
+			})
 		return kwargs
 
 	def get_form(self, step=None, data=None, files=None):
@@ -172,7 +174,8 @@ class TransferenciaWizard(SessionWizardView):
 			formset = True
 
 		if formset:
-			formset = formset_factory(wraps(CajaForm)(partial(CajaForm, consorcio=consorcio(self.request))), extra=5)
+			formset = formset_factory(wraps(CajaForm)(
+				partial(CajaForm, consorcio=consorcio(self.request))), extra=5)
 			form = formset(prefix='cajas', data=data)
 		return form
 
@@ -185,7 +188,8 @@ class TransferenciaWizard(SessionWizardView):
 			data_cajas=cajas
 		)
 		documento.guardar()
-		messages.success(self.request, "Transferencia entre cajas generada con exito")
+		messages.success(
+			self.request, "Transferencia entre cajas generada con exito")
 		return redirect('transferencias')
 
 
@@ -193,7 +197,8 @@ class HeaderExeptMixin:
 
 	def dispatch(self, request, *args, **kwargs):
 		try:
-			objeto = self.model.objects.get(consorcio=consorcio(self.request), pk=kwargs['pk'])
+			objeto = self.model.objects.get(
+				consorcio=consorcio(self.request), pk=kwargs['pk'])
 		except:
 			messages.error(request, 'No se pudo encontrar.')
 			return redirect('transferencias')
@@ -207,11 +212,13 @@ class PDFTransferencia(HeaderExeptMixin, generic.DetailView):
 	""" Ver PDF de una transferencia """
 
 	model = Transferencia
-	template_name = 'herramientas/transferencias/index.html' # Solo para que no arroje error
+	# Solo para que no arroje error
+	template_name = 'herramientas/transferencias/index.html'
 
 	def get(self, request, *args, **kwargs):
 		transferencia = self.get_object()
-		response = HttpResponse(transferencia.pdf, content_type='application/pdf')
+		response = HttpResponse(
+			transferencia.pdf, content_type='application/pdf')
 		nombre = "Transferencia_%s.pdf" % (transferencia.formatoAfip())
 		content = "inline; filename=%s" % nombre
 		response['Content-Disposition'] = content
@@ -227,3 +234,73 @@ class RegistroTransferencias(OrderQS):
 	filterset_class = TransferenciaFilter
 	template_name = "herramientas/transferencias/registros/transferencias.html"
 	paginate_by = 50
+
+
+@method_decorator(group_required('administrativo', 'contable'), name='dispatch')
+class Organos(generic.ListView):
+
+	""" Index de transferencias """
+	template_name = 'herramientas/organos.html'
+	paginate_by = 10
+
+	def get_queryset(self, **kwargs):
+
+		socios = Socio.objects.filter(consorcio=consorcio(
+			self.request), directivo__isnull=False)
+		return socios
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		context['socios'] = self.get_queryset()
+		return context
+
+@method_decorator(group_required('administrativo', 'contable'), name='dispatch')
+class Articulo(generic.FormView):
+
+	""" Index de transferencias """
+	template_name = 'herramientas/articulo9/index.html'
+	form_class = Periodo
+
+	def hacer_datos(self, fecha_inicio, fecha_fin):
+		categorias = Tipo_asociado.objects.filter(consorcio=consorcio(self.request), cuota_social=True)
+		tt = []
+		for c in categorias:
+			socios = Socio.objects.filter(tipo_asociado=c, fecha_alta__lte=fecha_fin)
+			ss = []
+			for s in socios:
+				if not s.baja:
+					ss.append(s)
+				if s.baja:
+					if  s.baja > fecha_fin:
+						ss.append(s)
+			creditos = Credito.objects.filter(socio__tipo_asociado=c, ingreso__es_cuota_social=True, fin__gte=fecha_inicio, fin__lte=fecha_fin)
+			importe = 0
+			total_cobrado = 0
+			uno_total_cobrado = 0
+			if creditos:
+				importe = float(creditos.first().capital)
+				total_cobrado = importe * creditos.count()
+				uno_total_cobrado = total_cobrado * 0.01
+			dato = {
+				'categoria':c.nombre,
+				'cantidad': len(ss),
+				'cuota_cobrada':  creditos.count(),
+				'importe': importe,
+				'total_cobrado': total_cobrado,
+				'1_total_cobrado': uno_total_cobrado,
+			}
+			tt.append(dato)
+
+
+		return tt
+
+	def form_valid(self, form):
+		try:
+			fecha_inicio = form.cleaned_data['fecha_inicio']
+			fecha_fin = form.cleaned_data['fecha_fin']
+			datos = self.hacer_datos(fecha_inicio, fecha_fin)
+			context = {'datos': datos}
+			return render(self.request, 'herramientas/articulo9/articulo_9.html', context)
+		except ValidationError as e:
+			form.add_error(None, str(e))
+			return self.form_invalid(form)

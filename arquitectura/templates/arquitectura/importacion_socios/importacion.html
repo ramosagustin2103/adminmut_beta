@@ -15,7 +15,9 @@
             <li>*cuit: Cuit del asociado </li>
             <li>*tipo_persona: Colocar "fisica o juridica"</li>
             <li>*tipo_asociado: Alguna de la categorias cargadas</li>
-            <li>*numero_asociado: Numero del asociado</li>
+            {% if not consorcio.cuit_nasociado %}
+              <li>*numero_asociado: Numero del asociado</li>
+            {% endif %}
             <li>*fecha_alta: Fecha de alta del asociado</li>
             <li>*provincia: Provincia</li>
             <li>*localidad: Localidad</li>

@@ -31,7 +31,9 @@
                   <th class="text-right">Cuit</th>
                   <th>T.de asoc</th>
                   <th>F.de alta</th>
-                  <th>Nª de asoc</th>
+                  {% if not consorcio.cuit_nasociado %}
+                    <th>Nª de asoc</th>
+                  {% endif %}
                   <th>F.de nac</th>
                   <th>Provincia</th>
                   <th>Localidad</th>
@@ -54,7 +56,9 @@
                     <td class="text-right">{{ socio.cuit }}</td>
                     <td>{{ socio.tipo_asociado }}</td>                    
                     <td>{{ socio.fecha_alta|date:"d/m/Y" }}</td>
-                    <td>{{ socio.numero_asociado }}</td>
+                    {% if not consorcio.cuit_nasociado %}
+                      <td>{{ socio.numero_asociado }}</td>
+                    {% endif %}
                     <td>{{ socio.fecha_nacimiento|date:"d/m/Y" }}</td>
                     <td>{{ socio.provincia }}</td>
                     <td>{{ socio.localidad }}</td>
@@ -63,8 +67,7 @@
                     <td>{{ socio.profesion }}</td>                    
                     <td>{{ socio.mail }}</td>                    
                     <td>{{ socio.telefono }}</td>                    
-                    <td>{{ socio.codigo_postal }}</td>
-                                        
+                    <td>{{ socio.codigo_postal }}</td>                                        
                     <td>{{ socio.notificaciones }}</td>                    
 
                   </tr>

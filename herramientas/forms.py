@@ -6,6 +6,8 @@ from django.forms import formset_factory
 from arquitectura.models import *
 from .models import *
 from admincu.forms import FormControl
+from django.core.exceptions import ValidationError
+
 
 
 class InicialForm(FormControl, forms.Form):
@@ -21,3 +23,17 @@ class InicialForm(FormControl, forms.Form):
 		super().__init__(*args, **kwargs)
 		self.fields['punto'].queryset = PointOfSales.objects.filter(owner=consorcio.contribuyente)
 		self.fields['caja_destino'].queryset = Caja.objects.filter(consorcio=consorcio)
+
+class Periodo(FormControl, forms.Form):
+	fecha_inicio = forms.DateField(label="Desde", widget=forms.TextInput(attrs={'placeholder':'YYYY-MM-DD'}))
+	fecha_fin = forms.DateField(label="Hasta", widget=forms.TextInput(attrs={'placeholder':'YYYY-MM-DD'}))
+
+	def clean(self):
+		cleaned_data = super().clean()
+		fecha_inicio = cleaned_data.get('fecha_inicio')
+		fecha_fin = cleaned_data.get('fecha_fin')
+
+		if fecha_inicio and fecha_fin and fecha_inicio > fecha_fin:
+			raise ValidationError("La fecha de inicio no puede ser mayor que la fecha de fin.")
+
+		return cleaned_data		

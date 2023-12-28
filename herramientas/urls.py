@@ -10,4 +10,11 @@ urlpatterns = [
 	path('transferencias/nueva/', TransferenciaWizard.as_view(), name='nueva-transferencia'),
 	path('transferencias/registros/', RegistroTransferencias.as_view(), name='registro de transferencias'),
 	path('transferencias/pdf/<int:pk>/', PDFTransferencia.as_view(), name='pdf-transferencia'),
+
+	# Organos directivos
+	path('organos/', Organos.as_view(), name='organos'),
+
+	# Articulo 9
+	path('articulo/', Articulo.as_view(), name='articulo'),
+
 ]

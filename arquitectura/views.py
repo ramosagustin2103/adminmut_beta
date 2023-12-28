@@ -414,17 +414,19 @@ class SociosImportacionWizard(SessionWizardView):
 				return "No puede haber cuits repetidos en el archivo, el CUIT: {} esta repetido".format(c)
 
 	def validar_repetidos_numero_asociado(self, datos):
-		data_numeroasoc = datos['numero_asociado']
+		try:
+			data_numeroasoc = datos['numero_asociado']
 
-		seen = set()
+			seen = set()
 
-		for c in data_numeroasoc:
-			if not c in seen:
-				seen.add(c)
-			else:
-				print('numero de asociado repetido en el archivo')
-				return "No puede haber numeros de asociado repetidos en el archivo, el Numero de asociado: {} esta repetido".format(c)
-					
+			for c in data_numeroasoc:
+				if not c in seen:
+					seen.add(c)
+				else:
+					print('numero de asociado repetido en el archivo')
+					return "No puede haber numeros de asociado repetidos en el archivo, el Numero de asociado: {} esta repetido".format(c)
+		except:
+			pass					
 
 	def limpiar_datos(self, datos):
 		"""
@@ -434,7 +436,7 @@ class SociosImportacionWizard(SessionWizardView):
 		"""
 
 		# Validacion de columnas
-		if Consorcio.cuit_nasociado:
+		if consorcio(self.request).cuit_nasociado:
 			columnas_necesarias = ['cuit', 'apellido', 'nombre', 'fecha_alta', 'tipo_persona', 'tipo_asociado', 'provincia', 'localidad', 'calle', 'fecha_nacimiento',
 								'es_extranjero', 'numero_calle', 'piso', 'departamento', 'codigo_postal', 'telefono', 'profesion', 'mail', 'notificaciones']
 			print('hasdjsadj')	
@@ -592,11 +594,11 @@ class SociosImportacionWizard(SessionWizardView):
 			'provincias': provincias,
 			'tas': ta,
 			'cuits': cuits,
-			'numero_asociados': numero_asociados if Consorcio.cuit_nasociado == False else cuits,
+			'numero_asociados': numero_asociados if not consorcio(self.request).cuit_nasociado else cuits,
 			'pisos': pisos,
 			'cps': cps,
 			'cuitos': cuitos,
-			'numeros_asociadoss':numeros_asociadoss if Consorcio.cuit_nasociado == False else cuitos
+			'numeros_asociadoss':numeros_asociadoss if not consorcio(self.request).cuit_nasociado else cuitos
 
 
 		}
@@ -617,6 +619,7 @@ class SociosImportacionWizard(SessionWizardView):
 			error = self.validar_datos(d, objetos_limpios)
 			if error:
 				errores.append("Linea {}: {}".format(fila, error))
+				print(error)
 			else:
 				cuit = objetos_limpios['cuits'][d['cuit']]
 				apellido = d['apellido']
@@ -637,10 +640,12 @@ class SociosImportacionWizard(SessionWizardView):
 				es_extranjero = objetos_limpios['es_extranjeros'][d['es_extranjero']]
 				fecha_nacimiento = self.convertirFecha(
 					d['fecha_nacimiento'])
-				if Consorcio.cuit_nasociado:
+
+
+				if  consorcio(self.request).cuit_nasociado:
 					numero_asociado = objetos_limpios['cuits'][d['cuit']]
-				else:
-					numero_asociado = objetos_limpios['numero_asociados'][d['numero_asociados']]
+				else:				
+					numero_asociado = objetos_limpios['numero_asociados'][d['numero_asociado']]
 
 				notificaciones = objetos_limpios['notificacioness'][d['notificaciones']]
 
@@ -723,7 +728,7 @@ class SociosImportacionWizard(SessionWizardView):
 		# 	else:
 		# 		pass
 
-		if Consorcio.cuit_nasociado == False:
+		if not consorcio(self.request).cuit_nasociado:
 			try:
 				objetos_limpios['numero_asociados'][datos['numero_asociado']]
 
@@ -765,7 +770,7 @@ class SociosImportacionWizard(SessionWizardView):
 		return [self.TEMPLATES[self.steps.current]]
 
 	def get_context_data(self, form, **kwargs):
-		context = super().get_context_data(form=form, **kwargs)
+		context = super().get_context_data(form=form, **kwargs)	
 		extension = 'comprobantes/nuevo/Recibo.html'
 		es_importacion_de_socios = 'importacion'
 		peticion = "Carga de Cobros"
@@ -775,10 +780,10 @@ class SociosImportacionWizard(SessionWizardView):
 			archivo = self.get_cleaned_data_for_step('importacion')['archivo']
 			datos = self.leer_datos(archivo)
 			repetidos_cuit = self.validar_repetidos_cuit(datos)
-			if Consorcio.cuit_nasociado == False:
-				repetidos_numeros_asociados = self.validar_repetidos_numero_asociado(datos)
-			else:
+			repetidos_numeros_asociados = self.validar_repetidos_numero_asociado(datos)
+			if consorcio(self.request).cuit_nasociado:
 				repetidos_numeros_asociados = None
+				print('puto')
 				pass
 			objetos_limpios = self.limpiar_datos(datos)
 		if self.steps.current == 'revision':

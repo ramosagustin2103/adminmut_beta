@@ -114,6 +114,7 @@ class WizardLiquidacionManager:
 		"conceptos": "creditos/nuevo/conceptos.html",
 		"importacion": "creditos/nuevo/importacion.html",
 		"revision": "creditos/nuevo/revision.html",
+		"cuota_social": "creditos/nuevo/cuota_social.html"
 	}
 
 	def obtener_accesorios(self, ingresos):
@@ -131,6 +132,7 @@ class WizardLiquidacionManager:
 		"""
 
 		data_inicial = self.get_cleaned_data_for_step('inicial')
+		data_cuota_social = self.get_cleaned_data_for_step('cuota_social')
 		data_creditos = self.get_cleaned_data_for_step(tipo)
 		data_plazos = self.get_cleaned_data_for_step('plazos')
 		creditos = []
@@ -202,8 +204,27 @@ class WizardLiquidacionManager:
 								credito['capital'] = round(d['subtotal']/q_socios_de_los_grupos,2)
 							elif d['distribucion'] == "socio":
 								credito['capital'] = round(d['subtotal'],2)
-							print(creditos)
 							creditos.append(credito)
+
+		elif tipo == "cuota_social":
+			for d in data_cuota_social:
+				if d:
+					if d['subtotal']:
+						base_credito = {
+							'consorcio':consorcio(self.request),
+							'periodo':data_inicial['fecha_operacion'],
+							'ingreso':Ingreso.objects.get(consorcio=consorcio(self.request),es_cuota_social=True),
+						}
+						for socio in Socio.objects.filter(tipo_asociado=d['categorias_asociado']):
+							credito = base_credito.copy()
+							credito['socio'] = socio
+							credito['capital'] = round(d['subtotal'],2)
+							creditos.append(credito)
+
+
+
+
+
 
 		return creditos
 
@@ -250,6 +271,83 @@ class WizardLiquidacionManager:
 			)			
 		return liquidacion
 
+@method_decorator(group_required('administrativo'), name='dispatch')
+class CuotaSocialWizard(WizardLiquidacionManager, SessionWizardView):
+
+	form_list = [
+		('inicial', InicialForm),
+		('cuota_social', CuotaSocialForm),
+		('plazos', PlazoFormSet),
+		('confirmacion', ConfirmacionForm)
+	]
+
+	def get_template_names(self):
+		return [self.TEMPLATES[self.steps.current]]
+
+	def get_context_data(self, form, **kwargs):
+		context = super().get_context_data(form=form, **kwargs)
+		tipo = "Cuota Social"
+		peticion ="liquidacion de comprobantes RG-1415"
+		if self.steps.current == 'plazos':
+			data_individuales = self.get_cleaned_data_for_step('cuota_social')
+			ingresos = [Ingreso.objects.get(consorcio=consorcio(self.request),es_cuota_social=True)]
+			accesorios = self.obtener_accesorios(ingresos)
+
+		elif self.steps.current == 'confirmacion':
+			data_plazos = self.hacer_plazos()
+			liquidacion = self.hacer_liquidacion('cuota_social', receipt_type="101")
+
+		context.update(locals())
+
+		return context
+
+
+	def get_form_kwargs(self, step):
+		kwargs = super().get_form_kwargs()
+		if step in ["inicial", "cuota_social"]:
+			kwargs.update({
+					'consorcio': consorcio(self.request)
+				})
+		if step == "confirmacion":
+			liquidacion = self.hacer_liquidacion('cuota_social', receipt_type="101")
+			mostrar = len(liquidacion.listar_documentos()) == 1
+			kwargs.update({
+					'mostrar': mostrar
+				})
+		return kwargs
+
+	def get_form(self, step=None, data=None, files=None):
+		form = super().get_form(step, data, files)
+		formset = False
+		if data:
+			if 'cuota_social' in data['cuota_social_wizard-current_step']:
+				formset = True
+		if step == "cuota_social":
+			formset = True
+
+		if formset:
+			formset = formset_factory(wraps(CuotaSocialForm)(partial(CuotaSocialForm, consorcio=consorcio(self.request))), extra=1)
+			form = formset(prefix='cuota_social', data=data)
+		return form
+
+	@transaction.atomic
+	def done(self, form_list, **kwargs):
+		liquidacion = self.hacer_liquidacion('cuota_social', receipt_type="101")
+		liquidacion = liquidacion.guardar()
+		contado = self.get_cleaned_data_for_step('confirmacion')['confirmacion']
+		if contado:
+			factura = liquidacion.factura_set.first()
+			creditos = factura.incorporar_creditos()
+			factura.validar_factura()
+
+			liquidacion.confirmar()
+			if liquidacion.estado == "confirmado":
+				return redirect('nuevo-rcx-factura', pk=factura.pk)
+			else:
+				messages.error(self.request, factura.observacion)
+		else:
+			messages.success(self.request, envioAFIP)
+		return redirect('recursos')
 
 
 @method_decorator(group_required('administrativo'), name='dispatch')
